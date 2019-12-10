@@ -9,3 +9,5 @@ raspberry.sh: lib/preamble.sh lib/fetch.sh raspberry/main.sh
 
 clean:
 	rm -rf raspberry.sh .cache
+
+.PHONY: clean

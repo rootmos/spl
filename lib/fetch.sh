@@ -6,7 +6,7 @@ fetch() {
     else
         info "fetching $(basename "$1")"
         FILE=$TMP/$(basename "$1")
-        wget --output-document="$FILE" "$2" | output
+        wget --progress=dot --output-document="$FILE" "$2" 2>&1 | output
         echo "$3  $FILE" | sha256sum -c | output
         if [ -d "$CACHE" ]; then
             cp "$FILE" "$CACHE/$3"

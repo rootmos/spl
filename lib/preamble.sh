@@ -31,7 +31,7 @@ info() {
 }
 
 output() {
-    if [ "${VERBOSE-0}" = 1 ]; then
+    if [ "${VERBOSE-0}" -eq 1 ]; then
         cat
     else
         cat > /dev/null
