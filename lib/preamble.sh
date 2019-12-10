@@ -26,7 +26,7 @@ fi
 
 info() {
     if [ -n "${INFO-1}" ]; then
-        echo "-- $@" >&2
+        echo "-- $*" >&2
     fi
 }
 

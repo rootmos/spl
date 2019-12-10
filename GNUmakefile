@@ -10,4 +10,7 @@ raspberry.sh: lib/preamble.sh lib/fetch.sh raspberry/main.sh
 clean:
 	rm -rf raspberry.sh .cache
 
-.PHONY: clean
+check:
+	shellcheck --shell=bash $(shell git ls-files | grep '\.sh$$')
+
+.PHONY: clean check

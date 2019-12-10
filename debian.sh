@@ -36,7 +36,7 @@ shift $((OPTIND-1))
 # tmp
 TMP=$(mktemp -d .debian.XXXXXX)
 clean() {
-    if command -v gpgconf 2>&1 1>/dev/null; then
+    if command -v gpgconf 1>/dev/null 2>&1 ; then
         gpgconf --homedir="$TMP/.gnupg" --kill gpg-agent
     fi
 
@@ -46,7 +46,7 @@ trap clean EXIT
 
 # output helpers
 info() {
-    echo 1>&2 "-- $@"
+    echo 1>&2 "-- $*"
 }
 
 output() {
@@ -371,8 +371,8 @@ if [ ! -f "$KERNEL" ]; then
     _gpg() {
         gpg --homedir="$TMP" "$@" | output
     }
-    _gpg --recv-keys $KEYS 2>&1 | output
-    _gpg $(for k in $KEYS; do echo --trusted-key "$k"; done) \
+    _gpg --recv-keys "$KEYS" 2>&1 | output
+    _gpg "$(for k in $KEYS; do echo --trusted-key "$k"; done)" \
         --verify "$KERNEL_TARBALL.sign" "$KERNEL_TARBALL" 2>&1 | output
 
     info "preparing root: extracting kernel sources"
@@ -401,7 +401,7 @@ GRUB_FMT=i386-pc
 GRUB_SRC_DIR=/usr/lib/grub/$GRUB_FMT
 GRUB_MODULES="linux boot crypto bufio extcmd vbe video video_fb relocator mmap"
 GRUB_MODULES="$GRUB_MODULES normal terminal gettext"
-if [ $(grub-mkimage --version | cut -f3 -d ' ') == "2.04" ]; then
+if [ "$(grub-mkimage --version | cut -f3 -d ' ')" == "2.04" ]; then
     GRUB_MODULES="$GRUB_MODULES verifiers"
 fi
 
@@ -453,13 +453,13 @@ dd if="$TMP/root.img" of="$IMG" bs=512 seek=2048 conv=notrunc 2>&1 | output
 
 info "running first boot"
 timeout --foreground "$FIRST_BOOT_TIMEOUT" qemu-system-x86_64 \
-    -smp cpus=$(nproc) -m 1024 \
+    -smp cpus="$(nproc)" -m 1024 \
     -no-reboot \
     -drive format=raw,file="$IMG",if=virtio \
     -chardev stdio,id=stdio,mux=on,signal=on \
     -device virtio-serial-pci -device virtconsole,chardev=stdio \
     -display none -nic user,model=virtio-net-pci \
     -device virtio-rng-pci \
-    $EXTRA_QEMU_OPTS | tee "$TMP/log" | output
+    "$EXTRA_QEMU_OPTS" | tee "$TMP/log" | output
 
 grep -cq "$INSTALLATION_TOKEN" "$TMP/log"
