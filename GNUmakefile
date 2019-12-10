@@ -1,9 +1,11 @@
+export CACHE ?= $(shell pwd)/.cache
+
 run: raspberry.sh
-	bash ./$< -c $(shell pwd)/.cache
+	bash ./$<
 
 raspberry.sh: lib/preamble.sh lib/fetch.sh raspberry/main.sh
 	cat $^ > $@
 	chmod +x $@
 
 clean:
-	rm -rf raspberry.sh
+	rm -rf raspberry.sh .cache
