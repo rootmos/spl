@@ -1,5 +1,5 @@
 run: raspberry.sh
-	bash -x ./$<
+	bash ./$< -c $(shell pwd)/.cache
 
 raspberry.sh: lib/preamble.sh lib/fetch.sh raspberry/main.sh
 	cat $^ > $@
