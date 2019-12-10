@@ -2,15 +2,11 @@
 
 set -o nounset -o pipefail -o errexit
 
-WS=$(mktemp -d)
-trap 'rm -rf "$WS"' EXIT
-
-TMP=$WS/tmp
-mkdir -p "$TMP"
-
-while getopts "vc:-" OPT; do
+SUDO=${SUDO-}
+while getopts "vc:S-" OPT; do
     case $OPT in
         c) CACHE=${OPTARG:-$HOME/.cache/spl} ;;
+        S) SUDO=sudo ;;
         -) break ;;
         v) VERBOSE=1 ;;
         \?) echo "Invalid option: -$OPTARG" >&2; exit 2 ;;
@@ -37,3 +33,15 @@ output() {
         cat > /dev/null
     fi
 }
+
+_clean() {
+    rm -rf "$WS"
+}
+trap '_clean_main; _clean' EXIT
+
+WS=$(mktemp -d)
+TMP=$WS/tmp
+mkdir -p "$TMP"
+
+
+export SUDO
