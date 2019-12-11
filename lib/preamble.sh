@@ -3,10 +3,12 @@
 set -o nounset -o pipefail -o errexit
 
 SUDO=${SUDO-}
-while getopts "vc:S-" OPT; do
+J=$((2*$(nproc)))
+while getopts "vc:Sj:-" OPT; do
     case $OPT in
         c) CACHE=${OPTARG:-$HOME/.cache/spl} ;;
         S) SUDO=sudo ;;
+        j) J=$OPTARG ;;
         -) break ;;
         v) VERBOSE=1 ;;
         \?) echo "Invalid option: -$OPTARG" >&2; exit 2 ;;
@@ -43,4 +45,4 @@ WS=$(mktemp -d)
 TMP=$WS/tmp
 mkdir -p "$TMP"
 
-export SUDO
+export SUDO J

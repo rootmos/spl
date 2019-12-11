@@ -3,10 +3,12 @@ export CACHE ?= $(shell pwd)/.cache
 run: raspberry.sh
 	bash ./$<
 
-raspberry.sh: lib/preamble.sh lib/fetch.sh raspberry/kernel.config raspberry/main.sh
+.PHONY: raspberry.sh
+raspberry.sh:
 	cat lib/preamble.sh > $@
 	cat lib/fetch.sh >> $@
 	bin/bundle.sh kernel_config < raspberry/kernel.config >> $@
+	cat raspberry/toolchain.sh >> $@
 	cat raspberry/main.sh >> $@
 	chmod +x $@
 
