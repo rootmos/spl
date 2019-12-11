@@ -1,10 +1,13 @@
 export CACHE ?= $(shell pwd)/.cache
+export TOOLCHAIN_PREFIX ?= $(shell pwd)/.toolchain
 
 run: raspberry.sh
-	bash ./$<
+	./$<
 
-.PHONY: raspberry.sh
-raspberry.sh:
+all: check raspberry.sh
+
+raspberry.sh: lib/preamble.sh lib/fetch.sh \
+	raspberry/kernel.config raspberry/toolchain.sh raspberry/main.sh
 	cat lib/preamble.sh > $@
 	cat lib/fetch.sh >> $@
 	bin/bundle.sh kernel_config < raspberry/kernel.config >> $@
@@ -12,10 +15,14 @@ raspberry.sh:
 	cat raspberry/main.sh >> $@
 	chmod +x $@
 
+menuconfig: raspberry.sh
+	MENUCONFIG=$(shell pwd)/raspberry/kernel.config ./raspberry.sh
+
 clean:
-	rm -rf raspberry.sh .cache
+	rm -rf raspberry.sh .cache .toolchain
 
 check:
 	shellcheck --shell=bash $(shell git ls-files | grep '\.sh$$')
 
-.PHONY: clean check
+.PHONY: all clean check
+.PHONY: menuconfig
