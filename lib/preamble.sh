@@ -37,11 +37,10 @@ output() {
 _clean() {
     rm -rf "$WS"
 }
-trap '_clean_main; _clean' EXIT
+trap 'command -v _clean_main > /dev/null && _clean_main; _clean' EXIT
 
 WS=$(mktemp -d)
 TMP=$WS/tmp
 mkdir -p "$TMP"
-
 
 export SUDO
