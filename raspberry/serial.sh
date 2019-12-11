@@ -4,17 +4,18 @@ set -o nounset -o pipefail -o errexit
 
 WAIT=0
 LOOP=0
-POLL=0.2
+POLL=0.01
 BAUD=115200
 INFO=1
-INTERACTIVE=1
-while getopts "wlqd:p:-" OPT; do
+INTERACTIVE=0
+while getopts "wlqid:p:-" OPT; do
     case $OPT in
         w) WAIT=1 ;;
         l) LOOP=1 ;;
         p) POLL=$OPTARG ;;
         d) DEVICE=$OPTARG ;;
         q) INFO=0 ;;
+        i) INTERACTIVE=1 ;;
         -) break ;;
         ?) exit 2 ;;
     esac
@@ -57,9 +58,13 @@ fi
 TIME_WAITED=0
 while true; do
     DEVICE=$(find_device)
-    if [ -z "$DEVICE" ]; then
+    if [ -z "$DEVICE" ] || [ ! -r "$DEVICE" ]; then
         if [ "$(bc <<< "$TIME_WAITED == 0 || $TIME_WAITED >= 1")" -eq 1 ]; then
-            info "waiting for devices..."
+            if [ -z "$DEVICE" ]; then
+                info "waiting for devices..."
+            else
+                info "waiting for devices to become readable..."
+            fi
             TIME_WAITED=0
         fi
         sleep "$POLL"

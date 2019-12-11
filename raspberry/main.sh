@@ -37,7 +37,12 @@ _clean_main() {
 IMG=$WS/$APP.img
 info "formatting (${SIZE_MB}M)"
 dd if=/dev/zero of="$IMG" bs=1K count="${SIZE_MB}K" 2>&1 | output
-sfdisk "$IMG" <<< "2048,,,*" | output
+sfdisk "$IMG" <<< "2048,,c,*" | output
 
 info "installing filesystem image"
 dd if="$WS/root.img" of="$IMG" bs=512 seek=2048 conv=notrunc 2>&1 | output
+
+if [ -n "${BLKDEV-}" ]; then
+    info "burn image"
+    $SUDO dd bs=4M if="$IMG" of="$BLKDEV" conv=fsync
+fi
