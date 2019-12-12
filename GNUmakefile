@@ -8,11 +8,15 @@ run: raspberry.sh
 all: check raspberry.sh
 
 raspberry.sh: lib/preamble.sh lib/fetch.sh \
-	raspberry/kernel.config raspberry/toolchain.sh raspberry/main.sh
+	raspberry/kernel.config raspberry/toolchain.sh \
+	lib/busybox.config lib/busybox.sh \
+	raspberry/main.sh
 	cat lib/preamble.sh > $@
 	cat lib/fetch.sh >> $@
 	bin/bundle.sh kernel_config < raspberry/kernel.config >> $@
 	cat raspberry/toolchain.sh >> $@
+	bin/bundle.sh busybox_config < lib/busybox.config >> $@
+	cat lib/busybox.sh >> $@
 	cat raspberry/main.sh >> $@
 	chmod +x $@
 

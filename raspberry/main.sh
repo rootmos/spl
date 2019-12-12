@@ -15,6 +15,13 @@ KERNEL_SRC_SHA256=295651137abfaf3f1817d49051815a5eb0cc197d0100003d10e46f5eb0f451
 
 ROOT=$WS/root
 mkdir -p "$ROOT"
+BOOT=$WS/boot
+mkdir -p "$BOOT"
+
+busybox_install "$ROOT"
+#busybox_menuconfig lib/busybox.config
+
+exit 0
 
 fetch "$WS/kernel.tar.gz" "$KERNEL_SRC_URL" "$KERNEL_SRC_SHA256"
 mkdir -p "$WS/linux"
@@ -33,33 +40,33 @@ make -C "$WS/linux" ARCH=arm CROSS_COMPILE="$TARGET-" V=1 \
     zImage dtbs -j"$((2*$(nproc)))" 2>&1 | output
 
 info "install kernel"
-cp "$WS/linux/arch/arm/boot/zImage" "$ROOT/kernel.img"
-cp "$WS/linux/arch/arm/boot/dts"/*.dtb "$ROOT"
-mkdir -p "$ROOT/overlays"
-cp "$WS/linux/arch/arm/boot/dts/overlays"/*.dtb* "$ROOT/overlays/"
-cp "$WS/linux/arch/arm/boot/dts/overlays/README" "$ROOT/overlays/"
+cp "$WS/linux/arch/arm/boot/zImage" "$BOOT/kernel.img"
+cp "$WS/linux/arch/arm/boot/dts"/*.dtb "$BOOT"
+mkdir -p "$BOOT/overlays"
+cp "$WS/linux/arch/arm/boot/dts/overlays"/*.dtb* "$BOOT/overlays/"
+cp "$WS/linux/arch/arm/boot/dts/overlays/README" "$BOOT/overlays/"
 
-BOOTCODE=$ROOT/bootcode.bin
+BOOTCODE=$BOOT/bootcode.bin
 fetch "$BOOTCODE" "$BOOTCODE_URL" "$BOOTCODE_SHA256"
 
 info "patching bootcode: BOOT_UART=1"
 sed -i -e "s/BOOT_UART=0/BOOT_UART=1/" "$BOOTCODE"
 
-fetch "$ROOT/start.elf" "$START_ELF_URL" "$START_ELF_SHA256"
-fetch "$ROOT/fixup.dat" "$FIXUP_URL" "$FIXUP_SHA256"
+fetch "$BOOT/start.elf" "$START_ELF_URL" "$START_ELF_SHA256"
+fetch "$BOOT/fixup.dat" "$FIXUP_URL" "$FIXUP_SHA256"
 
 info "configure boot procedure"
-cat <<EOF > "$ROOT/cmdline.txt"
+cat <<EOF > "$BOOT/cmdline.txt"
 console=serial0,115200 console=tty1
 EOF
-cat <<EOF > "$ROOT/config.txt"
+cat <<EOF > "$BOOT/config.txt"
 start_file=start.elf
 fixup_file=fixup.dat
 kernel=kernel.img
 cmdline=cmdline.txt
 EOF
 
-info "creating filesystem filesystem (containing $(du -sh "$ROOT" | cut -f1) of data)"
+info "creating filesystem filesystem (containing $(du -sh "$BOOT" | cut -f1) of data)"
 dd if=/dev/zero of="$WS/root.img" bs=1K count="$((SIZE_MB-1))K" 2>&1 | output
 mkfs.fat "$WS/root.img" | output
 
@@ -71,8 +78,8 @@ _clean_main() {
 mkdir -p "$MNT"
 $SUDO mount -o loop "$WS/root.img" "$MNT"
 
-info "populate filesystem"
-$SUDO rsync -rv "$ROOT"/ "$MNT" | output
+info "populate boot filesystem"
+$SUDO rsync -rv "$BOOT"/ "$MNT" | output
 
 info "unmount filesystem"
 $SUDO umount "$MNT"

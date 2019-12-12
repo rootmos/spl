@@ -1,4 +1,4 @@
-TARGET=arm-linux-musleabihf
+export TARGET=arm-linux-musleabihf
 
 TWS=$WS/toolchain
 mkdir -p "$TWS"
