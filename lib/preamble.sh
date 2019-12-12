@@ -4,11 +4,13 @@ set -o nounset -o pipefail -o errexit
 
 SUDO=${SUDO-}
 J=$((2*$(nproc)))
-while getopts "vc:Sj:-" OPT; do
+LOG_FILE=${LOG_FILE-/dev/null}
+while getopts "vc:Sj:l:-" OPT; do
     case $OPT in
         c) CACHE=${OPTARG:-$HOME/.cache/spl} ;;
         S) SUDO=sudo ;;
         j) J=$OPTARG ;;
+        l) LOG_FILE=$OPTARG ;;
         -) break ;;
         v) VERBOSE=1 ;;
         \?) echo "Invalid option: -$OPTARG" >&2; exit 2 ;;
@@ -30,9 +32,9 @@ info() {
 
 output() {
     if [ "${VERBOSE-0}" -eq 1 ]; then
-        cat
+        tee -a "$LOG_FILE"
     else
-        cat > /dev/null
+        cat >> "$LOG_FILE"
     fi
 }
 

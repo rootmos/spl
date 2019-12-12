@@ -1,5 +1,6 @@
 export CACHE ?= $(shell pwd)/.cache
 export TOOLCHAIN_PREFIX ?= $(shell pwd)/.toolchain
+export LOG_FILE ?= .log
 
 run: raspberry.sh
 	./$<
@@ -19,7 +20,7 @@ menuconfig: raspberry.sh
 	MENUCONFIG=$(shell pwd)/raspberry/kernel.config ./raspberry.sh
 
 clean:
-	rm -rf raspberry.sh .cache .toolchain
+	rm -rf raspberry.sh .cache .toolchain .log
 
 check:
 	shellcheck --shell=bash $(shell git ls-files | grep '\.sh$$')
