@@ -13,7 +13,6 @@ sha256() {
 
 put_cache() {
     if [ -d "$CACHE" ]; then
-        SHA256="$(sha256sum "$1")"
         info "caching $(basename "$1"): $(sha256 "$1")"
         cp "$1" "$CACHE/$(sha256 "$1")"
     fi

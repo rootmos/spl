@@ -7,11 +7,12 @@ run: raspberry.sh
 
 all: check raspberry.sh
 
-raspberry.sh: lib/preamble.sh lib/cache.sh lib/fetch.sh \
+raspberry.sh: lib/preamble.sh lib/log.sh lib/cache.sh lib/fetch.sh \
 	raspberry/kernel.config raspberry/toolchain.sh \
 	lib/busybox.config lib/busybox.sh \
 	raspberry/main.sh
 	cat lib/preamble.sh > $@
+	cat lib/log.sh >> $@
 	cat lib/cache.sh >> $@
 	cat lib/fetch.sh >> $@
 	bin/bundle.sh kernel_config < raspberry/kernel.config >> $@
