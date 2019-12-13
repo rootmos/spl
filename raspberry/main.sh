@@ -1,32 +1,28 @@
+if [ ! -b "${BLKDEV-}" ] && [ -z "${OUT-}" ]; then
+    error "neither a block device nor an output file was specified"
+fi
+
 APP=${1-app}
 SIZE_MB=${SIZE_MB-20}
-
-BOOTCODE_URL=https://github.com/raspberrypi/firmware/raw/9f4983548584d4f70e6eec5270125de93a081483/boot/bootcode.bin
-BOOTCODE_SHA256=6505bbc8798698bd8f1dff30789b22289ebb865ccba7833b87705264525cbe46
-
-START_ELF_URL=https://github.com/raspberrypi/firmware/raw/9d6be5b07e81bdfb9c4b9a560e90fbc7477fdc6e/boot/start.elf
-START_ELF_SHA256=42736b4b32af51945cf11855e3ce9b6b167f6dc26c5dcb9bf03949b8a99517e2
-
-FIXUP_URL=https://github.com/raspberrypi/firmware/raw/601d36df3aa541560e4cf9b571105d20db2b4b7c/boot/fixup.dat
-FIXUP_SHA256=cdf2600ce1376cfea219f359495845b4e68596274e4bc12ad3661b78617cbcd0
-
-KERNEL_SRC_URL=https://github.com/raspberrypi/linux/archive/raspberrypi-kernel_1.20190925-1.tar.gz
-KERNEL_SRC_SHA256=295651137abfaf3f1817d49051815a5eb0cc197d0100003d10e46f5eb0f45173
 
 ROOT=$WS/root
 mkdir -p "$ROOT"
 
 busybox_install "$ROOT"
 
+info "create root initramfs"
+initramfs_list "$ROOT" | tee "$WS/root.list" | output
+initramfs_mk "$WS/root.cpio.gz" < "$WS/root.list"
+
 BOOT=$WS/boot
 mkdir "$BOOT"
 
 if is_cached "${KERNEL_SHA256-}"; then
     info "install kernel (cached)"
-    get_cached "$KERNEL_SHA256" "$WS/kernel.tar.bz2"
+    borrow_cached "$KERNEL_SHA256" "$WS/kernel.tar.bz2"
     tar -xvf "$WS/kernel.tar.bz2" -C "$BOOT" | output
 else
-    fetch "$WS/kernel.tar.gz" "$KERNEL_SRC_URL" "$KERNEL_SRC_SHA256"
+    fetch -b "$WS/kernel.tar.gz" "$KERNEL_SRC_URL" "$KERNEL_SRC_SHA256"
     mkdir -p "$WS/linux"
     tar xf "$WS/kernel.tar.gz" -C "$WS/linux" --strip-components=1 | output
 
@@ -63,18 +59,19 @@ fetch "$BOOT/fixup.dat" "$FIXUP_URL" "$FIXUP_SHA256"
 
 info "configure boot procedure"
 cat <<EOF > "$BOOT/cmdline.txt"
-console=serial0,115200 console=tty1
+console=serial0,115200 console=tty1 root=/dev/ram0 ro init=/sbin/init
 EOF
 cat <<EOF > "$BOOT/config.txt"
 start_file=start.elf
 fixup_file=fixup.dat
 kernel=kernel.img
 cmdline=cmdline.txt
+initramfs root.cpio.gz followkernel
 EOF
 
-info "creating filesystem filesystem (containing $(du -sh "$BOOT" | cut -f1) of data)"
-dd if=/dev/zero of="$WS/root.img" bs=1K count="$((SIZE_MB-1))K" 2>&1 | output
-mkfs.fat "$WS/root.img" | output
+info "creating filesystem filesystem "
+dd if=/dev/zero of="$WS/boot.img" bs=1K count="$((SIZE_MB-1))K" 2>&1 | output
+mkfs.fat "$WS/boot.img" | output
 
 info "mount filesystem"
 MNT=$WS/mnt
@@ -82,12 +79,15 @@ _clean_main() {
     $SUDO umount "$MNT"
 }
 mkdir -p "$MNT"
-$SUDO mount -o loop "$WS/root.img" "$MNT"
+$SUDO mount -o loop "$WS/boot.img" "$MNT"
 
-info "populate boot filesystem"
+info "populate boot filesystem "
+$SUDO cp "$WS/root.cpio.gz" "$BOOT"
+info "boot filesystem size: $(du -sh "$BOOT" | cut -f1)"
 $SUDO rsync -rv "$BOOT"/ "$MNT" | output
 
 info "unmount filesystem"
+sync "$MNT"
 $SUDO umount "$MNT"
 _clean_main() {
     true
@@ -99,7 +99,7 @@ dd if=/dev/zero of="$IMG" bs=1K count="${SIZE_MB}K" 2>&1 | output
 sfdisk "$IMG" <<< "2048,,c,*" | output
 
 info "installing filesystem image"
-dd if="$WS/root.img" of="$IMG" bs=512 seek=2048 conv=notrunc 2>&1 | output
+dd if="$WS/boot.img" of="$IMG" bs=512 seek=2048 conv=notrunc 2>&1 | output
 
 if [ -b "${BLKDEV-}" ]; then
     info "burn image"

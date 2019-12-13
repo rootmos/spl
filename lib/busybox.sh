@@ -1,5 +1,5 @@
 busybox_fetch() {
-    fetch "$WS/busybox.tar.bz2" \
+    fetch -b "$WS/busybox.tar.bz2" \
         "https://busybox.net/downloads/busybox-1.31.1.tar.bz2" \
         "d0f940a72f648943c1f2211e0e3117387c31d765137d92bd8284a3fb9752a998"
     mkdir -p "$WS/busybox"

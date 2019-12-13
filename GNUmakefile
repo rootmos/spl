@@ -7,7 +7,9 @@ run: raspberry.sh
 
 all: check raspberry.sh
 
-raspberry.sh: lib/preamble.sh lib/log.sh lib/cache.sh lib/fetch.sh \
+raspberry.sh: lib/preamble.sh  lib/log.sh lib/cache.sh \
+	lib/initramfs.sh lib/fetch.sh \
+	raspberry/versions.sh \
 	raspberry/kernel.config raspberry/toolchain.sh \
 	lib/busybox.config lib/busybox.sh \
 	raspberry/main.sh
@@ -15,6 +17,8 @@ raspberry.sh: lib/preamble.sh lib/log.sh lib/cache.sh lib/fetch.sh \
 	cat lib/log.sh >> $@
 	cat lib/cache.sh >> $@
 	cat lib/fetch.sh >> $@
+	cat lib/initramfs.sh >> $@
+	cat raspberry/versions.sh >> $@
 	bin/bundle.sh kernel_config < raspberry/kernel.config >> $@
 	cat raspberry/toolchain.sh >> $@
 	bin/bundle.sh busybox_config < lib/busybox.config >> $@
@@ -29,7 +33,8 @@ clean:
 	rm -rf raspberry.sh .cache .toolchain .log
 
 check:
-	shellcheck --shell=bash $(shell git ls-files | grep '\.sh$$')
+	shellcheck --shell=bash --exclude=SC2001 \
+		$(shell git ls-files | grep '\.sh$$')
 
 .PHONY: all clean check
 .PHONY: menuconfig

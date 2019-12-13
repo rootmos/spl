@@ -7,6 +7,11 @@ get_cached() {
     cp "$CACHE/$1" "$2"
 }
 
+borrow_cached() {
+    echo "$1  $CACHE/$1" | sha256sum -c | output
+    ln -s "$CACHE/$1" "$2"
+}
+
 sha256() {
     sha256sum "$1" | cut -f1 -d' '
 }

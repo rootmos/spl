@@ -35,8 +35,5 @@ WS=$(mktemp -d)
 TMP=$WS/tmp
 mkdir -p "$TMP"
 
-if [ ! -b "${BLKDEV-}" ] && [ -z "${OUT-}" ]; then
-    error "neither a block device nor an output file was specified"
-fi
-
 export SUDO J KERNEL_SHA256 VERBOSE LOG_FILE
+export BLKDEV OUT
