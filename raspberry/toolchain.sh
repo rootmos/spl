@@ -26,7 +26,7 @@ if ! command -v "$TARGET-gcc" > /dev/null; then
     xzcat "$TWS/gcc1.tar.xz" | tar -xf- -C "$TWS/gcc1" --strip-components=1 | output
     info "configure gcc (phase 1)"
     (cd "$TWS/gcc1/build" && ../configure \
-        --target="$TARGET" --prefix="$TWS/phase1" --with-sysroot="$TOOLCHAIN_PREFIX" \
+        --target="$TARGET" --prefix="$TOOLCHAIN_PREFIX" \
         --with-arch=armv6 --with-fpu=vfp --with-float=hard \
         --enable-languages=c --without-headers \
         --disable-libmudflap \
@@ -37,9 +37,15 @@ if ! command -v "$TARGET-gcc" > /dev/null; then
         --disable-multilib) 2>&1 | output
 
     info "compile gcc (phase 1)"
-    for t in all-gcc all-target-libgcc install-gcc install-target-libgcc; do
+    for t in all-gcc install-gcc; do
         make -C "$TWS/gcc1/build" -j"$J" "$t" 2>&1 | output
     done
+
+    fetch -b "$WS/kernel-headers.tar.gz" "$KERNEL_SRC_URL" "$KERNEL_SRC_SHA256"
+    mkdir -p "$WS/linux-headers"
+    tar xf "$WS/kernel-headers.tar.gz" -C "$WS/linux-headers" --strip-components=1 | output
+    make -C "$WS/linux-headers" ARCH=arm CROSS_COMPILE="$TARGET-" \
+        INSTALL_HDR_PATH="$TOOLCHAIN_PREFIX/usr" headers_install
 
     fetch -b "$TWS/musl.tar.gz" "$MUSL_URL" "$MUSL_SHA256"
     mkdir -p "$TWS/musl/build"
@@ -51,12 +57,6 @@ if ! command -v "$TARGET-gcc" > /dev/null; then
     ) | output
     make -C "$TWS/musl/build" -j"$J" 2>&1 | output
     make -C "$TWS/musl/build" -j"$J" install 2>&1 | output
-
-    fetch -b "$WS/kernel-headers.tar.gz" "$KERNEL_SRC_URL" "$KERNEL_SRC_SHA256"
-    mkdir -p "$WS/linux-headers"
-    tar xf "$WS/kernel-headers.tar.gz" -C "$WS/linux-headers" --strip-components=1 | output
-    make -C "$WS/linux-headers" ARCH=arm CROSS_COMPILE="$TARGET-" \
-        INSTALL_HDR_PATH="$TOOLCHAIN_PREFIX/usr" headers_install
 
     fetch -b "$TWS/gcc2.tar.xz" "$GCC_URL" "$GCC_SHA256"
     mkdir -p "$TWS/gcc2/build"

@@ -31,6 +31,6 @@ _clean() {
 }
 trap 'command -v _clean_main > /dev/null && _clean_main; _clean' EXIT
 
-WS=$(mktemp -d)
+WS=$(mktemp -d spl.XXXXXX)
 TMP=$WS/tmp
 mkdir -p "$TMP"

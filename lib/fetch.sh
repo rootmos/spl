@@ -20,7 +20,7 @@ fetch() {
         info "fetching $(basename "$1")"
         FILE=$TMP/$(basename "$1")
         wget --progress=dot --output-document="$FILE" "$2" 2>&1 | output
-        put_cache "$3" "$FILE"
+        put_cache "$FILE"
         mv "$FILE" "$1"
     fi
 }
