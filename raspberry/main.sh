@@ -15,36 +15,42 @@ KERNEL_SRC_SHA256=295651137abfaf3f1817d49051815a5eb0cc197d0100003d10e46f5eb0f451
 
 ROOT=$WS/root
 mkdir -p "$ROOT"
-BOOT=$WS/boot
-mkdir -p "$BOOT"
 
 busybox_install "$ROOT"
-#busybox_menuconfig lib/busybox.config
 
-exit 0
+BOOT=$WS/boot
+mkdir "$BOOT"
 
-fetch "$WS/kernel.tar.gz" "$KERNEL_SRC_URL" "$KERNEL_SRC_SHA256"
-mkdir -p "$WS/linux"
-tar xf "$WS/kernel.tar.gz" -C "$WS/linux" --strip-components=1 | output
+if is_cached "${KERNEL_SHA256-}"; then
+    info "install kernel (cached)"
+    get_cached "$KERNEL_SHA256" "$WS/kernel.tar.bz2"
+    tar -xvf "$WS/kernel.tar.bz2" -C "$BOOT" | output
+else
+    fetch "$WS/kernel.tar.gz" "$KERNEL_SRC_URL" "$KERNEL_SRC_SHA256"
+    mkdir -p "$WS/linux"
+    tar xf "$WS/kernel.tar.gz" -C "$WS/linux" --strip-components=1 | output
 
-info "configure kernel"
-kernel_config > "$WS/linux/.config"
-if [ -n "${MENUCONFIG-}" ]; then
-    make -C "$WS/linux" ARCH=arm CROSS_COMPILE="$TARGET-" menuconfig
-    cp "$WS/linux/.config" "$MENUCONFIG"
-    exit 0
+    info "configure kernel"
+    kernel_config > "$WS/linux/.config"
+    if [ -n "${MENUCONFIG-}" ]; then
+        make -C "$WS/linux" ARCH=arm CROSS_COMPILE="$TARGET-" menuconfig
+        cp "$WS/linux/.config" "$MENUCONFIG"
+        exit 0
+    fi
+
+    info "compile kernel"
+    make -C "$WS/linux" ARCH=arm CROSS_COMPILE="$TARGET-" V=1 \
+        zImage dtbs -j"$((2*$(nproc)))" 2>&1 | output
+
+    info "install kernel"
+    cp "$WS/linux/arch/arm/boot/zImage" "$BOOT/kernel.img"
+    cp "$WS/linux/arch/arm/boot/dts"/*.dtb "$BOOT"
+    mkdir -p "$BOOT/overlays"
+    cp "$WS/linux/arch/arm/boot/dts/overlays"/*.dtb* "$BOOT/overlays/"
+    cp "$WS/linux/arch/arm/boot/dts/overlays/README" "$BOOT/overlays/"
+    tar -cvjf "$WS/kernel.tar.bz2" -C "$BOOT" . | output
+    put_cache "$WS/kernel.tar.bz2"
 fi
-
-info "compile kernel"
-make -C "$WS/linux" ARCH=arm CROSS_COMPILE="$TARGET-" V=1 \
-    zImage dtbs -j"$((2*$(nproc)))" 2>&1 | output
-
-info "install kernel"
-cp "$WS/linux/arch/arm/boot/zImage" "$BOOT/kernel.img"
-cp "$WS/linux/arch/arm/boot/dts"/*.dtb "$BOOT"
-mkdir -p "$BOOT/overlays"
-cp "$WS/linux/arch/arm/boot/dts/overlays"/*.dtb* "$BOOT/overlays/"
-cp "$WS/linux/arch/arm/boot/dts/overlays/README" "$BOOT/overlays/"
 
 BOOTCODE=$BOOT/bootcode.bin
 fetch "$BOOTCODE" "$BOOTCODE_URL" "$BOOTCODE_SHA256"
@@ -98,4 +104,9 @@ dd if="$WS/root.img" of="$IMG" bs=512 seek=2048 conv=notrunc 2>&1 | output
 if [ -b "${BLKDEV-}" ]; then
     info "burn image"
     $SUDO dd bs=4M if="$IMG" of="$BLKDEV" conv=fsync 2>&1 | output
+fi
+
+if [ -n "${OUT-}" ]; then
+    info "copying final image"
+    cp "$IMG" "$OUT"
 fi
