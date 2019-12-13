@@ -12,7 +12,7 @@ busybox_install() {
     cat <<EOF >> "$WS/busybox/.config"
 CONFIG_PREFIX="$1"
 EOF
-    make -C "$WS/busybox" CROSS_COMPILE="$TARGET-" -j"$J" 2>&1 VERBOSE=1 | output
+    make -C "$WS/busybox" CROSS_COMPILE="$TARGET-" -j"$J" 2>&1 V=1 | output
     make -C "$WS/busybox" CROSS_COMPILE="$TARGET-" -j"$J" install 2>&1 | output
 }
 

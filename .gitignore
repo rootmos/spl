@@ -1,4 +1,5 @@
 raspberry.sh
+raspberry.*.sh
 .cache
 .toolchain
 .log

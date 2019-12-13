@@ -6,6 +6,8 @@ initramfs_list() {
             LOCATION=$(sed 's,^'"$LOCAL"','"$TARGET"',' <<< "$x")
             if [ -d "$x" ]; then
                 echo "dir $LOCATION 0555 0 0"
+            elif [ -h "$x" ]; then
+                echo "slink $LOCATION $(readlink "$x") 0555 0 0"
             elif [ -x "$x" ]; then
                 echo "file $LOCATION $x 0555 0 0"
             elif [ -f "$x" ]; then

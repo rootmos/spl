@@ -34,6 +34,3 @@ trap 'command -v _clean_main > /dev/null && _clean_main; _clean' EXIT
 WS=$(mktemp -d)
 TMP=$WS/tmp
 mkdir -p "$TMP"
-
-export SUDO J KERNEL_SHA256 VERBOSE LOG_FILE
-export BLKDEV OUT
