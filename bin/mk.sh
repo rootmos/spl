@@ -4,6 +4,7 @@ set -o nounset -o pipefail -o errexit
 
 SCRIPT_DIR=$(readlink -f "$0" | xargs dirname)
 ACTION=collect
+OUT=
 while getopts "do:-" OPT; do
     case $OPT in
         d) ACTION=dependencies ;;
@@ -22,10 +23,12 @@ suffix() {
 }
 
 if [ "$ACTION" = "dependencies" ]; then
-    while read -ra LINE; do
+    cp /dev/null "$OUT"
+    while read -r LINE; do
+        readarray -t ARGS <<< "$(sh -c 'for a in '"$LINE"'; do echo "$a"; done')"
         OPTIND=1
         SKIP=0
-        while getopts "f:l:" OPT ${LINE[@]}; do
+        while getopts "f:l:" OPT "${ARGS[@]}"; do
             case "$OPT" in
                 f) ;;
                 l) SKIP=1 ;;
@@ -33,7 +36,7 @@ if [ "$ACTION" = "dependencies" ]; then
             esac
         done
         if [ "$SKIP" -ne 1 ]; then
-            echo "${LINE[$((OPTIND-1))]}"
+            echo "${ARGS[$((OPTIND-1))]}" >> "$OUT"
         fi
     done
     exit 0
@@ -48,8 +51,7 @@ echo "# generated: $(date -Is)" > "$OUT"
 chmod +x "$OUT"
 
 while read -r LINE; do
-    sh -c 'for a in '"$LINE"'; do echo "$a"; done'
-    readarray -t ARGS <<< $(sh -c 'for a in '"$LINE"'; do echo "$a"; done')
+    readarray -t ARGS <<< "$(sh -c 'for a in '"$LINE"'; do echo "$a"; done')"
     FUNCTION_NAME=
     LITERAL=
     OPTIND=1
@@ -73,8 +75,7 @@ while read -r LINE; do
         SUFFIX=$(suffix "$IN")
         if [ "$MIME_TYPE" = "text/x-shellscript" ] \
             || [ "$SUFFIX" = "sh" ]; then
-            echo "" >> "$OUT"
-            echo "# $IN" >> "$OUT"
+            ( echo "";  echo "# $IN" ) >> "$OUT"
             cat "$IN" >> "$OUT"
         else
             echo "don't know what to do with: $IN" 1>&2
