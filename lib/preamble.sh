@@ -27,10 +27,14 @@ else
 fi
 
 _clean() {
+    if command -v _clean_main > /dev/null; then
+        _clean_main
+    fi
+
     rm -rf "$WS"
 }
-trap 'command -v _clean_main > /dev/null && _clean_main; _clean' EXIT
+trap '_clean' EXIT
 
-WS=$(mktemp -d spl.XXXXXX)
+WS=$(mktemp --tmpdir --directory "spl.$(basename "$0").XXXXXX")
 TMP=$WS/tmp
 mkdir -p "$TMP"

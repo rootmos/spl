@@ -1,0 +1,9 @@
+lib/preamble.sh
+lib/log.sh
+lib/cache.sh
+lib/fetch.sh
+raspberry/versions.sh
+raspberry/toolchain.sh
+-f kernel_config raspberry/kernel.config
+raspberry/kernel.sh
+-l "kernel_menuconfig \$1"

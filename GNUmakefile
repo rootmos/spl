@@ -7,61 +7,19 @@ run: raspberry.sh
 
 all: check raspberry.sh
 
-raspberry.sh: lib/preamble.sh  lib/log.sh lib/cache.sh \
-	lib/initramfs.sh lib/fetch.sh \
-	raspberry/versions.sh \
-	raspberry/toolchain.sh raspberry/kernel.config raspberry/kernel.sh \
-	lib/busybox.config lib/busybox.sh \
-	raspberry/main.sh
-	cat lib/preamble.sh > $@
-	cat lib/log.sh >> $@
-	cat lib/cache.sh >> $@
-	cat lib/fetch.sh >> $@
-	cat lib/initramfs.sh >> $@
-	cat raspberry/versions.sh >> $@
-	cat raspberry/toolchain.sh >> $@
-	bin/bundle.sh kernel_config < raspberry/kernel.config >> $@
-	cat raspberry/kernel.sh >> $@
-	bin/bundle.sh busybox_config < lib/busybox.config >> $@
-	cat lib/busybox.sh >> $@
-	cat raspberry/main.sh >> $@
-	chmod +x $@
+define recipe
+$(strip $(1)): $(strip $(1)).recipe $(shell bin/mk.sh -d < "$(strip $(1)).recipe")
+	bin/mk.sh "$$@" < "$$<"
+endef
 
-raspberry.kernel.sh: lib/preamble.sh lib/log.sh lib/cache.sh \
-	lib/fetch.sh \
-	raspberry/versions.sh \
-	raspberry/toolchain.sh raspberry/kernel.config raspberry/kernel.sh
-	cat lib/preamble.sh > $@
-	cat lib/log.sh >> $@
-	cat lib/cache.sh >> $@
-	cat lib/fetch.sh >> $@
-	cat raspberry/versions.sh >> $@
-	cat raspberry/toolchain.sh >> $@
-	bin/bundle.sh kernel_config < raspberry/kernel.config >> $@
-	cat raspberry/kernel.sh >> $@
-	echo 'kernel_menuconfig "$$1"' >> $@
-	chmod +x $@
+$(eval $(call recipe, raspberry.sh))
+$(eval $(call recipe, raspberry.kernel-menuconfig.sh))
+$(eval $(call recipe, raspberry.busybox-menuconfig.sh))
 
-raspberry.busybox.sh: lib/preamble.sh lib/log.sh lib/cache.sh \
-	lib/fetch.sh \
-	raspberry/versions.sh \
-	raspberry/toolchain.sh \
-	lib/busybox.config lib/busybox.sh
-	cat lib/preamble.sh > $@
-	cat lib/log.sh >> $@
-	cat lib/cache.sh >> $@
-	cat lib/fetch.sh >> $@
-	cat raspberry/versions.sh >> $@
-	cat raspberry/toolchain.sh >> $@
-	bin/bundle.sh busybox_config < lib/busybox.config >> $@
-	cat lib/busybox.sh >> $@
-	echo 'busybox_menuconfig "$$1"' >> $@
-	chmod +x $@
-
-menuconfig-kernel: raspberry.kernel.sh
+menuconfig-kernel: raspberry.kernel-menuconfig.sh
 	./$< $(shell pwd)/raspberry/kernel.config
 
-menuconfig-busybox: raspberry.busybox.sh
+menuconfig-busybox: raspberry.busybox-menuconfig.sh
 	./$< $(shell pwd)/lib/busybox.config
 
 clean:
