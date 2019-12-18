@@ -9,4 +9,6 @@ raspberry/toolchain.sh
 raspberry/kernel.sh
 -f busybox_config lib/busybox.config
 lib/busybox.sh
+lib/ncurses.sh
+lib/alsa.sh
 raspberry/main.sh

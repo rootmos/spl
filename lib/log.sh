@@ -1,21 +1,23 @@
 LOG_FILE=${LOG_FILE-/dev/null}
+LOG_DATE_FMT=%T
+
 if [ "${VERBOSE-0}" -eq 1 ]; then
     LOG_OUTPUT=1
 fi
 
 info() {
     if [ "${LOG_INFO-1}" -eq 1 ]; then
-        echo "-- $*" | tee -a "$LOG_FILE" 1>&2
+        echo "$(date +"$LOG_DATE_FMT") -- $*" | tee -a "$LOG_FILE" 1>&2
     else
-        echo "!! $*" >> "$LOG_FILE"
+        echo "$(date +"$LOG_DATE_FMT") -- $*" >> "$LOG_FILE"
     fi
 }
 
 error() {
     if [ "${LOG_ERROR-1}" -eq 1 ]; then
-        echo "!! $*" | tee -a "$LOG_FILE" 1>&2
+        echo "$(date +"$LOG_DATE_FMT") !! $*" | tee -a "$LOG_FILE" 1>&2
     else
-        echo "!! $*" >> "$LOG_FILE"
+        echo "$(date +"$LOG_DATE_FMT") !! $*" >> "$LOG_FILE"
     fi
     exit 1
 }

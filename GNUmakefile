@@ -1,5 +1,4 @@
 export CACHE ?= $(shell pwd)/.cache
-export TOOLCHAIN_PREFIX ?= $(shell pwd)/.toolchain
 export LOG_FILE ?= .log
 
 run: raspberry.sh
@@ -26,7 +25,7 @@ clean:
 	rm -rf raspberry.sh raspberry.*.sh .cache .toolchain .log
 
 check:
-	shellcheck --shell=bash --exclude=SC2001,SC2034 \
+	shellcheck --shell=bash --exclude=SC2001,SC2034,SC1090,SC2153 \
 		$(shell git ls-files | grep '\.sh$$')
 
 .PHONY: all clean check

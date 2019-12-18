@@ -20,3 +20,7 @@ START_ELF_SHA256=42736b4b32af51945cf11855e3ce9b6b167f6dc26c5dcb9bf03949b8a99517e
 
 FIXUP_URL=https://github.com/raspberrypi/firmware/raw/601d36df3aa541560e4cf9b571105d20db2b4b7c/boot/fixup.dat
 FIXUP_SHA256=cdf2600ce1376cfea219f359495845b4e68596274e4bc12ad3661b78617cbcd0
+
+# user-space
+PKG_CONFIG_URL=https://pkg-config.freedesktop.org/releases/pkg-config-0.29.2.tar.gz
+PKG_CONFIG_SHA256=6fc69c01688c9458a57eb9a1664c9aba372ccda420a02bf4429fe610e7e7d591

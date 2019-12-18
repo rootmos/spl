@@ -7,6 +7,13 @@ SIZE_MB=${SIZE_MB-20}
 
 ROOT=$WS/root
 mkdir -p "$ROOT"
+TOOLCHAIN_ROOT=$WS/toolchain
+toolchain "$TOOLCHAIN_ROOT"
+source "$TOOLCHAIN_ROOT"/.env
+ncurses_install "$TOOLCHAIN_ROOT"
+alsa_lib_install "$TOOLCHAIN_ROOT"
+alsa_utils_install "$TOOLCHAIN_ROOT"
+exit 0
 
 busybox_install "$ROOT"
 
