@@ -57,142 +57,6 @@ output() {
     fi
 }
 
-# root
-if [ -z "$ROOT" ]; then
-    ROOT=$TMP/root
-fi
-
-if [ ! -d "$ROOT" ]; then
-    info "preparing root: bootstraping Debian ($RELEASE)"
-    debootstrap --variant=minbase --include="$SYSTEM_PKGs" "$RELEASE" "$ROOT" | output
-fi
-
-if [[ -v SITE ]]; then
-    info "preparing root: installing site files"
-    tar -cf- -C "$SITE" . | tar -xf- -C "$ROOT"
-fi
-
-[[ ! -v HOST ]] && HOST=$RELEASE
-info "preparing root: setting hostname ($HOST)"
-echo "$HOST" > "$ROOT/etc/hostname"
-
-info "preparing root: set up networking"
-ln -sf "/usr/lib/systemd/system/systemd-networkd-wait-online.service" "$ROOT/usr/lib/systemd/system/multi-user.target.wants"
-
-mkdir -p "$ROOT/usr/lib/systemd/system/systemd-networkd.service.d"
-cat <<EOF > "$ROOT/usr/lib/systemd/system/systemd-networkd.service.d/after-udev.conf"
-[Service]
-ExecStartPre=/sbin/udevadm settle
-EOF
-
-cat <<EOF > "$ROOT/etc/systemd/network/dhcp.network"
-[Match]
-Name=*
-
-[Network]
-DHCP=ipv4
-
-[DHCP]
-UseDNS=yes
-EOF
-
-info "preparing root: configuring resolvers"
-cat <<EOF > "$ROOT/etc/resolv.conf"
-nameserver 1.1.1.1
-EOF
-
-info "preparing root: configuring initial systemd target"
-cat <<EOF > "$ROOT/usr/lib/systemd/system/install.target"
-[Unit]
-Description=Installation
-Requires=multi-user.target
-AllowIsolate=yes
-EOF
-ln -sf "/usr/lib/systemd/system/install.target" "$ROOT/usr/lib/systemd/system/default.target"
-
-info "preparing root: configuring journald"
-cat <<EOF > "$ROOT/etc/systemd/journald.conf"
-[Journal]
-ForwardToConsole=yes
-MaxLevelConsole=debug
-EOF
-
-info "preparing root: disabling getty"
-find "$ROOT/etc/systemd/system/getty.target.wants" -type l -delete
-find "$ROOT/usr/lib/systemd/system/getty.target.wants" -type l -delete
-find "$ROOT/usr/lib/systemd/system/multi-user.target.wants" -name "getty.target" -type l -delete
-
-info "preparing root: configure install-site unit"
-mkdir -p "$ROOT/usr/lib/systemd/system/install.target.wants"
-ln -sf "/usr/lib/systemd/system/install-site.service" "$ROOT/usr/lib/systemd/system/install.target.wants"
-
-cat <<EOF > "$ROOT/usr/lib/systemd/system/install-site.service"
-[Unit]
-Description=Site specific installation
-After=network-online.target
-Wants=network-online.target
-
-[Service]
-Type=oneshot
-ExecStart=/bin/sh /usr/local/bin/install-site.wrapper.sh
-EOF
-
-INSTALLATION_TOKEN=$(uuidgen)
-cat <<EOF > "$ROOT/INSTALL_SITE_CANARY"
-If this file is found in a live system then the installation has failed.
-$INSTALLATION_TOKEN
-EOF
-
-cat <<EOF > "$ROOT/usr/local/bin/install-site.wrapper.sh"
-#!/bin/sh
-
-set -o errexit
-
-info() {
-    echo 1>&2 "-- \$@"
-}
-
-error() {
-    echo 1>&2 "!! \$@"
-}
-
-info "installing packages: $PKGs"
-apt-get update
-apt-get install -o DPkg::Options::="--force-confold" -y $PKGs
-
-if [ -x /etc/install-site.sh ]; then
-    info "beginning site installation"
-    if /etc/install-site.sh; then
-        info "finished site installation"
-    else
-        error "site installationh exited with non-zero status: \$?"
-        systemctl reboot 2>/dev/null
-    fi
-fi
-
-info "prepare for first real boot"
-ln -sf "/usr/lib/systemd/system/multi-user.target" "/usr/lib/systemd/system/default.target"
-
-rm "/usr/local/bin/install-site.wrapper.sh"
-rm "/usr/lib/systemd/system/install-site.service"
-rm "/usr/lib/systemd/system/install.target"
-rm -rf "/usr/lib/systemd/system/install.target.wants"
-
-info "configuring final grub config"
-cat <<FOE > "/$GRUB_DST_DIR/grub.cfg"
-linux $KERNEL_DST_DIR/$(basename "$KERNEL") root=/dev/sda1 rw console=ttyS0,38400n8d init=/bin/systemd systemd.show_status=0 net.ifnames=0
-boot
-FOE
-
-info "finished site installation: \$(tail -n+2 /INSTALL_SITE_CANARY)"
-rm /INSTALL_SITE_CANARY
-
-info "rebooting"
-systemctl reboot 2>/dev/null
-EOF
-chmod +x "$ROOT/usr/local/bin/install-site.wrapper.sh"
-
-
 # kernel
 if [[ ! -v KERNEL ]]; then
     KERNEL=$TMP/linux/arch/x86/boot/bzImage
@@ -394,6 +258,141 @@ if [ ! -f "$KERNEL" ]; then
         cp "$TMP/linux/arch/x86/boot/bzImage" "$KERNEL"
     fi
 fi
+
+# root
+if [ -z "$ROOT" ]; then
+    ROOT=$TMP/root
+fi
+
+if [ ! -d "$ROOT" ]; then
+    info "preparing root: bootstraping Debian ($RELEASE)"
+    debootstrap --variant=minbase --include="$SYSTEM_PKGs" "$RELEASE" "$ROOT" | output
+fi
+
+if [[ -v SITE ]]; then
+    info "preparing root: installing site files"
+    tar -cf- -C "$SITE" . | tar -xf- -C "$ROOT"
+fi
+
+[[ ! -v HOST ]] && HOST=$RELEASE
+info "preparing root: setting hostname ($HOST)"
+echo "$HOST" > "$ROOT/etc/hostname"
+
+info "preparing root: set up networking"
+ln -sf "/usr/lib/systemd/system/systemd-networkd-wait-online.service" "$ROOT/usr/lib/systemd/system/multi-user.target.wants"
+
+mkdir -p "$ROOT/usr/lib/systemd/system/systemd-networkd.service.d"
+cat <<EOF > "$ROOT/usr/lib/systemd/system/systemd-networkd.service.d/after-udev.conf"
+[Service]
+ExecStartPre=/sbin/udevadm settle
+EOF
+
+cat <<EOF > "$ROOT/etc/systemd/network/dhcp.network"
+[Match]
+Name=*
+
+[Network]
+DHCP=ipv4
+
+[DHCP]
+UseDNS=yes
+EOF
+
+info "preparing root: configuring resolvers"
+cat <<EOF > "$ROOT/etc/resolv.conf"
+nameserver 1.1.1.1
+EOF
+
+info "preparing root: configuring initial systemd target"
+cat <<EOF > "$ROOT/usr/lib/systemd/system/install.target"
+[Unit]
+Description=Installation
+Requires=multi-user.target
+AllowIsolate=yes
+EOF
+ln -sf "/usr/lib/systemd/system/install.target" "$ROOT/usr/lib/systemd/system/default.target"
+
+info "preparing root: configuring journald"
+cat <<EOF > "$ROOT/etc/systemd/journald.conf"
+[Journal]
+ForwardToConsole=yes
+MaxLevelConsole=debug
+EOF
+
+info "preparing root: disabling getty"
+find "$ROOT/etc/systemd/system/getty.target.wants" -type l -delete
+find "$ROOT/usr/lib/systemd/system/getty.target.wants" -type l -delete
+find "$ROOT/usr/lib/systemd/system/multi-user.target.wants" -name "getty.target" -type l -delete
+
+info "preparing root: configure install-site unit"
+mkdir -p "$ROOT/usr/lib/systemd/system/install.target.wants"
+ln -sf "/usr/lib/systemd/system/install-site.service" "$ROOT/usr/lib/systemd/system/install.target.wants"
+
+cat <<EOF > "$ROOT/usr/lib/systemd/system/install-site.service"
+[Unit]
+Description=Site specific installation
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+ExecStart=/bin/sh /usr/local/bin/install-site.wrapper.sh
+EOF
+
+INSTALLATION_TOKEN=$(uuidgen)
+cat <<EOF > "$ROOT/INSTALL_SITE_CANARY"
+If this file is found in a live system then the installation has failed.
+$INSTALLATION_TOKEN
+EOF
+
+cat <<EOF > "$ROOT/usr/local/bin/install-site.wrapper.sh"
+#!/bin/sh
+
+set -o errexit
+
+info() {
+    echo 1>&2 "-- \$@"
+}
+
+error() {
+    echo 1>&2 "!! \$@"
+}
+
+info "installing packages: $PKGs"
+apt-get update
+apt-get install -o DPkg::Options::="--force-confold" -y $PKGs
+
+if [ -x /etc/install-site.sh ]; then
+    info "beginning site installation"
+    if /etc/install-site.sh; then
+        info "finished site installation"
+    else
+        error "site installationh exited with non-zero status: \$?"
+        systemctl reboot 2>/dev/null
+    fi
+fi
+
+info "prepare for first real boot"
+ln -sf "/usr/lib/systemd/system/multi-user.target" "/usr/lib/systemd/system/default.target"
+
+rm "/usr/local/bin/install-site.wrapper.sh"
+rm "/usr/lib/systemd/system/install-site.service"
+rm "/usr/lib/systemd/system/install.target"
+rm -rf "/usr/lib/systemd/system/install.target.wants"
+
+info "configuring final grub config"
+cat <<FOE > "/$GRUB_DST_DIR/grub.cfg"
+linux $KERNEL_DST_DIR/$(basename "$KERNEL") root=/dev/sda1 rw console=ttyS0,38400n8d init=/bin/systemd systemd.show_status=0 net.ifnames=0
+boot
+FOE
+
+info "finished site installation: \$(tail -n+2 /INSTALL_SITE_CANARY)"
+rm /INSTALL_SITE_CANARY
+
+info "rebooting"
+systemctl reboot 2>/dev/null
+EOF
+chmod +x "$ROOT/usr/local/bin/install-site.wrapper.sh"
 
 
 # grub

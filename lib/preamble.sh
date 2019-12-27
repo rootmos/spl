@@ -19,7 +19,7 @@ while getopts "vc:Sj:l:d:o:K:-sDT:" OPT; do
         K) KERNEL_SHA256=$OPTARG ;;
         T) TOOLCHAIN_SHA256=$OPTARG ;;
         -) break ;;
-        \?) echo "Invalid option: -$OPTARG" >&2; exit 2 ;;
+        ?) exit 2 ;;
     esac
 done
 shift $((OPTIND-1))
