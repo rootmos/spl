@@ -10,7 +10,7 @@ diff -ur a/configure b/configure
 --- a/configure	2018-01-20 01:27:18.000000000 +0100
 +++ b/configure	2019-12-17 09:37:10.084927329 +0100
 @@ -13716,7 +13716,7 @@
- 
+
  if test "\$with_stripping" = yes
  then
 -	INSTALL_OPT_S="-s"
@@ -21,14 +21,14 @@ diff -ur a/configure b/configure
 EOF
 
     info "configuring ncurses"
-    (cd "$WS/ncurses/build" && env \
-        CC="$TARGET-gcc" CXX="$TARGET-g++" \
-        ../configure --prefix="$1" --host="$TARGET" \
-        --enable-pc-files --disable-nls \
-        --without-manpages) 2>&1 | output
+    (cd "$WS/ncurses/build" && ../configure \
+        --prefix="$1" --host="$TARGET" \
+        --enable-pc-files --with-pkg-config-libdir=$PKG_CONFIG_PATH \
+        --disable-nls --without-manpages \
+        --enable-widec \
+        ) 2>&1 | output
 
     info "building ncurses"
     make -C "$WS/ncurses/build" -j"$J" 2>&1 V=1 | output
     make -C "$WS/ncurses/build" -j"$J" install 2>&1 | output
 }
-

@@ -5,14 +5,14 @@ toolchain_env() {
     cat <<EOF
 TARGET=$TARGET
 export PATH=$TOOLCHAIN_PREFIX/bin:\$PATH
-HOSTCC=${HOSTCC-gcc}
-HOSTLD=${HOSTLD-ld}
-CC=$TARGET-gcc
-LD=$TARGET-ld
-AS=$TARGET-as
-CXX=$TARGET-g++
-PKG_CONFIG=$TOOLCHAIN_PREFIX/bin/$TARGET-pkg-config
-PKG_CONFIG_PATH=$TOOLCHAIN_PREFIX/lib/pkgconfig
+export HOSTCC=${HOSTCC-gcc} HOSTLD=${HOSTLD-ld}
+export LD=$TARGET-ld
+export AS=$TARGET-as
+export CC=$TARGET-gcc CFLAGS="--sysroot=$TOOLCHAIN_ROOT"
+export CPP=$TARGET-cpp CPPFLAGS="--sysroot=$TOOLCHAIN_ROOT"
+export CXX=$TARGET-g++ CXXFLAGS="--sysroot=$TOOLCHAIN_ROOT"
+export PKG_CONFIG=$TOOLCHAIN_PREFIX/bin/$TARGET-pkg-config
+export PKG_CONFIG_PATH=$TOOLCHAIN_PREFIX/lib/pkgconfig
 EOF
 }
 

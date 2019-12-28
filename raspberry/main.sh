@@ -10,10 +10,9 @@ mkdir -p "$ROOT"
 TOOLCHAIN_ROOT=$WS/toolchain
 toolchain "$TOOLCHAIN_ROOT"
 source "$TOOLCHAIN_ROOT"/.env
-ncurses_install "$TOOLCHAIN_ROOT"
-alsa_lib_install "$TOOLCHAIN_ROOT"
-alsa_utils_install "$TOOLCHAIN_ROOT"
-exit 0
+ncurses_install "$TOOLCHAIN_PREFIX"
+alsa_lib_install "$TOOLCHAIN_PREFIX"
+alsa_utils_install "$TOOLCHAIN_PREFIX"
 
 busybox_install "$ROOT"
 
