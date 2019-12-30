@@ -1,4 +1,5 @@
-lib/preamble.sh
+lib/shebang.sh
+lib/setup.sh
 lib/log.sh
 lib/cache.sh
 lib/fetch.sh

@@ -36,17 +36,21 @@ fetch "$BOOT/fixup.dat" "$FIXUP_URL" "$FIXUP_SHA256"
 
 info "configure boot procedure"
 cat <<EOF > "$BOOT/cmdline.txt"
-console=serial0,115200 root=/dev/ram0 init=/sbin/init
+console=ttyAMA0,115200 root=/dev/ram0 init=/bin/sh
 EOF
 cat <<EOF > "$BOOT/config.txt"
+disable_splash=1
 start_file=start.elf
 fixup_file=fixup.dat
 kernel=kernel.img
+arm_64bit=1
 cmdline=cmdline.txt
 initramfs root.cpio.gz followkernel
+dtoverlay=pi3-disable-bt
+init_uart_clock=1843200
 EOF
 
-info "creating filesystem filesystem "
+info "creating filesystem"
 dd if=/dev/zero of="$WS/boot.img" bs=1K count="$((SIZE_MB-1))K" 2>&1 | output
 mkfs.fat "$WS/boot.img" | output
 

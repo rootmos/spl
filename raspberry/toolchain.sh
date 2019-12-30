@@ -31,7 +31,7 @@ toolchain_configure_gcc() {
         --target="$TARGET" --prefix="$TOOLCHAIN_PREFIX" \
         --with-sysroot=/ \
         --with-build-sysroot="$TOOLCHAIN_ROOT" \
-        --with-arch=armv6 --with-fpu=vfp --with-float=hard \
+        --with-arch="$ARCH" \
         --enable-languages=c,c++ \
         --disable-nls --disable-multilib \
         --disable-libquadmath \
@@ -46,6 +46,7 @@ toolchain() {
     TOOLCHAIN_SHA256=${TOOLCHAIN_SHA256-${2-}}
 
     if is_cached "$TOOLCHAIN_SHA256"; then
+        info "install toolchain (cached)"
         borrow_cached "$TOOLCHAIN_SHA256" "$WS/toolchain.tar.bz2"
         mkdir -p "$TOOLCHAIN_ROOT"
         tar -xvf "$WS/toolchain.tar.bz2" -C "$TOOLCHAIN_ROOT" | output
@@ -53,11 +54,11 @@ toolchain() {
         return
     fi
 
-    TARGET=arm-linux-musleabihf
-    BARE_TARGET=arm-none-eabihf
+    ARCH=armv8-a
+    KERNEL_ARCH=arm64
+    TARGET=aarch64-linux-musleabi
     mkdir "$TOOLCHAIN_ROOT"
     TWS=$(mktemp --tmpdir="$TMP" --directory toolchain.XXXXXX)
-    BUILD_SYSROOT=$TWS/sys-root
 
     # NB make sure the following is compatible with toolchain_env above
     TOOLCHAIN_PREFIX=$TOOLCHAIN_ROOT/usr
@@ -75,7 +76,7 @@ toolchain() {
     (cd "$BINUTILS_BUILD" && "$BINUTILS_SRC/configure" \
         --target="$TARGET" --prefix="$TOOLCHAIN_PREFIX" \
         --with-sysroot=/ \
-        --with-arch=armv6 --with-fpu=vfp --with-float=hard \
+        --with-arch="$ARCH" \
         --disable-multilib --disable-nls \
         --enable-deterministic-archives) 2>&1 | output
     info "building binutils"
@@ -120,7 +121,7 @@ toolchain() {
     fetch -b "$TWS/kernel-headers.tar.gz" "$KERNEL_SRC_URL" "$KERNEL_SRC_SHA256"
     mkdir -p "$TWS/linux-headers"
     tar xf "$TWS/kernel-headers.tar.gz" -C "$TWS/linux-headers" --strip-components=1 | output
-    make -C "$TWS/linux-headers" ARCH=arm CC="$XGCC" LIBCC="$LIBCC" \
+    make -C "$TWS/linux-headers" ARCH="$KERNEL_ARCH" CC="$XGCC" LIBCC="$LIBCC" \
         INSTALL_HDR_PATH="$TOOLCHAIN_PREFIX" headers_install | output
 
     info "building gcc"

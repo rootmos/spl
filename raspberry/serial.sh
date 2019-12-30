@@ -33,6 +33,7 @@ find_device() {
 }
 
 go() {
+    info "reading: $1"
     if [ "$LOOP" -eq 1 ]; then
         EXEC=
     fi
@@ -44,7 +45,7 @@ go() {
     fi
     EC=$?
     set -o errexit
-    info "exit: $EC" 1>&2
+    info "exit: $EC"
 }
 
 if [ -n "${DEVICE-}" ]; then
