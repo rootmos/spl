@@ -3,7 +3,6 @@ toolchain_env() {
     TOOLCHAIN_PREFIX=$TOOLCHAIN_ROOT/usr
     TARGET=$(cat "$TOOLCHAIN_ROOT"/.target)
     cat <<EOF
-TARGET=$TARGET
 export PATH=$TOOLCHAIN_PREFIX/bin:\$PATH
 export HOSTCC=${HOSTCC-gcc} HOSTLD=${HOSTLD-ld}
 export LD=$TARGET-ld
@@ -31,7 +30,6 @@ toolchain_configure_gcc() {
         --target="$TARGET" --prefix="$TOOLCHAIN_PREFIX" \
         --with-sysroot=/ \
         --with-build-sysroot="$TOOLCHAIN_ROOT" \
-        --with-arch="$ARCH" \
         --enable-languages=c,c++ \
         --disable-nls --disable-multilib \
         --disable-libquadmath \
@@ -43,20 +41,30 @@ toolchain_configure_gcc() {
 
 toolchain() {
     TOOLCHAIN_ROOT=$1
-    TOOLCHAIN_SHA256=${TOOLCHAIN_SHA256-${2-}}
-
-    if is_cached "$TOOLCHAIN_SHA256"; then
-        info "install toolchain (cached)"
+    if is_cached "${TOOLCHAIN_SHA256-}"; then
+        info "installing toolchain ($TARGET, cached: $TOOLCHAIN_SHA256)"
         borrow_cached "$TOOLCHAIN_SHA256" "$WS/toolchain.tar.bz2"
         mkdir -p "$TOOLCHAIN_ROOT"
         tar -xvf "$WS/toolchain.tar.bz2" -C "$TOOLCHAIN_ROOT" | output
         toolchain_env "$TOOLCHAIN_ROOT" > "$TOOLCHAIN_ROOT"/.env
+
+        if [ "$ARCH" != "$(cat "$TOOLCHAIN_ROOT/.arch")" ]; then
+            error "incorrect arch pulled from cache:" \
+                "$ARCH != $(cat "$TOOLCHAIN_ROOT/.arch")"
+        fi
+
+        if [ "$KERNEL_ARCH" != "$(cat "$TOOLCHAIN_ROOT/.kernel_arch")" ]; then
+            error "incorrect kernel arch pulled from cache:" \
+                "$KERNEL_ARCH != $(cat "$TOOLCHAIN_ROOT/.kernel_arch")"
+        fi
+
+        if [ "$TARGET" != "$(cat "$TOOLCHAIN_ROOT/.target")" ]; then
+            error "incorrect target pulled from cache:" \
+                "$TARGET != $(cat "$TOOLCHAIN_ROOT/.target")"
+        fi
         return
     fi
 
-    ARCH=armv8-a
-    KERNEL_ARCH=arm64
-    TARGET=aarch64-linux-musleabi
     mkdir "$TOOLCHAIN_ROOT"
     TWS=$(mktemp --tmpdir="$TMP" --directory toolchain.XXXXXX)
 
@@ -75,8 +83,6 @@ toolchain() {
     mkdir -p "$BINUTILS_BUILD"
     (cd "$BINUTILS_BUILD" && "$BINUTILS_SRC/configure" \
         --target="$TARGET" --prefix="$TOOLCHAIN_PREFIX" \
-        --with-sysroot=/ \
-        --with-arch="$ARCH" \
         --disable-multilib --disable-nls \
         --enable-deterministic-archives) 2>&1 | output
     info "building binutils"
@@ -155,6 +161,8 @@ toolchain() {
     make -C "$PKG_CONFIG_BUILD" -j"$J" install-strip 2>&1 | output
 
     echo "$TARGET" > "$TOOLCHAIN_ROOT"/.target
+    echo "$ARCH" > "$TOOLCHAIN_ROOT"/.arch
+    echo "$KERNEL_ARCH" > "$TOOLCHAIN_ROOT"/.kernel_arch
 
     tar -cvjf "$WS/toolchain.tar.bz2" -C "$TOOLCHAIN_ROOT" . | output
     put_cache "$WS/toolchain.tar.bz2"

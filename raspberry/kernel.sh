@@ -1,6 +1,4 @@
 kernel_menuconfig() {
-    KERNEL_ARCH=${2-${KERNEL_ARCH-arm64}}
-
     TOOLCHAIN_ROOT=$WS/root
     toolchain "$TOOLCHAIN_ROOT"
     source "$TOOLCHAIN_ROOT"/.env
@@ -16,10 +14,8 @@ kernel_menuconfig() {
 
 kernel_install() {
     BOOT=$1
-    KERNEL_ARCH=${2-${KERNEL_ARCH-arm64}}
-
     if is_cached "${KERNEL_SHA256-}"; then
-        info "install kernel (cached)"
+        info "install kernel (cached: $KERNEL_SHA256)"
         borrow_cached "$KERNEL_SHA256" "$WS/kernel.tar.bz2"
         tar -xvf "$WS/kernel.tar.bz2" -C "$BOOT" | output
     else
@@ -31,11 +27,14 @@ kernel_install() {
         kernel_config > "$WS/linux/.config"
 
         info "compile kernel"
-        make -C "$WS/linux" ARCH="$KERNEL_ARCH" CROSS_COMPILE="$TARGET-" V=1 \
+        make -C "$WS/linux" ARCH="$KERNEL_ARCH" CROSS_COMPILE="$TARGET-" \
             Image dtbs -j"$J" 2>&1 | output
 
         info "install kernel"
-        cp "$WS/linux/arch/$KERNEL_ARCH/boot/Image" "$BOOT/kernel.img"
+        #"$WS/linux/scripts/mkknlimg" --283x \
+        "$WS/linux/scripts/mkknlimg" \
+            "$WS/linux/arch/$KERNEL_ARCH/boot/Image" "$BOOT/kernel.img" \
+            | output
         cp "$WS/linux/arch/$KERNEL_ARCH/boot/dts/broadcom"/*.dtb "$BOOT"
         mkdir -p "$BOOT/overlays"
         cp "$WS/linux/arch/$KERNEL_ARCH/boot/dts/overlays"/*.dtbo "$BOOT/overlays/"

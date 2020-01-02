@@ -23,7 +23,7 @@ EOF
     info "configuring ncurses"
     (cd "$WS/ncurses/build" && ../configure \
         --prefix="$1" --host="$TARGET" \
-        --enable-pc-files --with-pkg-config-libdir=$PKG_CONFIG_PATH \
+        --enable-pc-files --with-pkg-config-libdir="$PKG_CONFIG_PATH" \
         --disable-nls --without-manpages \
         --enable-widec \
         ) 2>&1 | output

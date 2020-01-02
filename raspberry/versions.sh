@@ -12,14 +12,16 @@ KERNEL_SRC_URL=https://github.com/raspberrypi/linux/archive/raspberrypi-kernel_1
 KERNEL_SRC_SHA256=295651137abfaf3f1817d49051815a5eb0cc197d0100003d10e46f5eb0f45173
 
 # firmware
-BOOTCODE_URL=https://github.com/raspberrypi/firmware/raw/9f4983548584d4f70e6eec5270125de93a081483/boot/bootcode.bin
+FIRMWARE_COMMIT=0c01dbefba45a08c47f8538d5a071a0fba6b7e83
+
+BOOTCODE_URL=https://github.com/raspberrypi/firmware/raw/$FIRMWARE_COMMIT/boot/bootcode.bin
 BOOTCODE_SHA256=6505bbc8798698bd8f1dff30789b22289ebb865ccba7833b87705264525cbe46
 
-START_ELF_URL=https://github.com/raspberrypi/firmware/raw/9d6be5b07e81bdfb9c4b9a560e90fbc7477fdc6e/boot/start.elf
-START_ELF_SHA256=42736b4b32af51945cf11855e3ce9b6b167f6dc26c5dcb9bf03949b8a99517e2
+START_ELF_URL=https://github.com/raspberrypi/firmware/raw/$FIRMWARE_COMMIT/boot/start.elf
+START_ELF_SHA256=442919907e4b7d8f007b79df1aa1e12f98e09ab393da65b48cd2b2af04301b7d
 
-FIXUP_URL=https://github.com/raspberrypi/firmware/raw/601d36df3aa541560e4cf9b571105d20db2b4b7c/boot/fixup.dat
-FIXUP_SHA256=cdf2600ce1376cfea219f359495845b4e68596274e4bc12ad3661b78617cbcd0
+FIXUP_URL=https://github.com/raspberrypi/firmware/raw/$FIRMWARE_COMMIT/boot/fixup.dat
+FIXUP_SHA256=85a54bf460aa3ff0d04ee54bc606bf3af39a2c5194e519ab278cf74ecf75f7a8
 
 # user-space
 PKG_CONFIG_URL=https://pkg-config.freedesktop.org/releases/pkg-config-0.29.2.tar.gz

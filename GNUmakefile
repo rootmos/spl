@@ -2,7 +2,7 @@ export CACHE ?= $(shell pwd)/.cache
 export LOG_FILE ?= .log
 
 run: raspberry.sh
-	./$<
+	./$< -3
 
 all: check raspberry.sh
 

@@ -1,7 +1,7 @@
 lib/shebang.sh
+lib/log.sh
 raspberry/opts.sh
 lib/setup.sh
-lib/log.sh
 lib/cache.sh
 lib/fetch.sh
 lib/initramfs.sh

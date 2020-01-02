@@ -2,28 +2,28 @@ if [ ! -b "${BLKDEV-}" ] && [ -z "${OUT-}" ]; then
     error "neither a block device nor an output file was specified"
 fi
 
-APP=${1-app}
-SIZE_MB=${SIZE_MB-20}
+SIZE_MB=${SIZE_MB-50}
 
 ROOT=$WS/root
-mkdir -p "$ROOT"
+BOOT=$WS/boot
+mkdir -p "$ROOT" "$BOOT"
 TOOLCHAIN_ROOT=$WS/toolchain
 toolchain "$TOOLCHAIN_ROOT"
 source "$TOOLCHAIN_ROOT"/.env
-ncurses_install "$TOOLCHAIN_PREFIX"
-alsa_lib_install "$TOOLCHAIN_PREFIX"
-alsa_utils_install "$TOOLCHAIN_PREFIX"
+kernel_install "$BOOT"
 
+#ncurses_install "$TOOLCHAIN_PREFIX"
+#alsa_lib_install "$TOOLCHAIN_PREFIX"
+#alsa_utils_install "$TOOLCHAIN_PREFIX"
 busybox_install "$ROOT"
 
 info "create root initramfs"
 initramfs_list "$ROOT" | tee "$WS/root.list" | output
 initramfs_mk "$WS/root.cpio.gz" < "$WS/root.list"
 
-BOOT=$WS/boot
-mkdir "$BOOT"
-
-kernel_install "$BOOT"
+if [ "$QEMU" -eq 1 ]; then
+    qemu-aarch64
+fi
 
 BOOTCODE=$BOOT/bootcode.bin
 fetch "$BOOTCODE" "$BOOTCODE_URL" "$BOOTCODE_SHA256"
@@ -36,18 +36,17 @@ fetch "$BOOT/fixup.dat" "$FIXUP_URL" "$FIXUP_SHA256"
 
 info "configure boot procedure"
 cat <<EOF > "$BOOT/cmdline.txt"
-console=ttyAMA0,115200 root=/dev/ram0 init=/bin/sh
+console=serial0,115200 root=/dev/ram0 init=/sbin/init
 EOF
 cat <<EOF > "$BOOT/config.txt"
 disable_splash=1
 start_file=start.elf
 fixup_file=fixup.dat
-kernel=kernel.img
-arm_64bit=1
 cmdline=cmdline.txt
 initramfs root.cpio.gz followkernel
-dtoverlay=pi3-disable-bt
-init_uart_clock=1843200
+dtoverlay=disable-bt
+kernel=kernel.img
+arm_64bit=1
 EOF
 
 info "creating filesystem"
@@ -74,7 +73,7 @@ _clean_main() {
     true
 }
 
-IMG=$WS/$APP.img
+IMG=$WS/app.img
 info "formatting (${SIZE_MB}M)"
 dd if=/dev/zero of="$IMG" bs=1K count="${SIZE_MB}K" 2>&1 | output
 sfdisk "$IMG" <<< "2048,,c,*" | output
