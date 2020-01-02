@@ -1,4 +1,4 @@
 #!/bin/sh
 
-echo "foo?"
-uname
+echo "Hello SPL world!"
+uname -a

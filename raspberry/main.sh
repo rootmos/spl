@@ -48,7 +48,7 @@ kernel=kernel.img
 EOF
 if [ "$RPI_VERSION" = "3" ]; then
     cat <<EOF >> "$BOOT/config.txt"
-dtoverlay=bt-disable
+dtoverlay=disable-bt
 arm_64bit=1
 EOF
 fi

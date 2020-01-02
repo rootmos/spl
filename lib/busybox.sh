@@ -17,6 +17,10 @@ EOF
 }
 
 busybox_menuconfig() {
+    TOOLCHAIN_ROOT=$WS/root
+    toolchain "$TOOLCHAIN_ROOT"
+    source "$TOOLCHAIN_ROOT"/.env
+
     busybox_fetch
     busybox_config > "$WS/busybox/.config"
     make -C "$WS/busybox" CROSS_COMPILE="$TARGET-" menuconfig < /dev/tty
