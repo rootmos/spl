@@ -1,7 +1,6 @@
 toolchain_env() {
     TOOLCHAIN_ROOT=$(readlink -f "$1")
     TOOLCHAIN_PREFIX=$TOOLCHAIN_ROOT/usr
-    TARGET=$(cat "$TOOLCHAIN_ROOT"/.target)
     cat <<EOF
 export PATH=$TOOLCHAIN_PREFIX/bin:\$PATH
 export HOSTCC=${HOSTCC-gcc} HOSTLD=${HOSTLD-ld}
@@ -41,6 +40,8 @@ toolchain_configure_gcc() {
 
 toolchain() {
     TOOLCHAIN_ROOT=$1
+    TOOLCHAIN_RUNTIME=$TOOLCHAIN_ROOT/runtime
+
     if is_cached "${TOOLCHAIN_SHA256-}"; then
         info "installing toolchain ($TARGET, cached: $TOOLCHAIN_SHA256)"
         borrow_cached "$TOOLCHAIN_SHA256" "$WS/toolchain.tar.bz2"
@@ -118,6 +119,10 @@ toolchain() {
 
     info "building musl libc"
     make -C "$MUSL_BUILD" -j"$J" AR="$TARGET-ar" RANLIB="$TARGET-ranlib" install 2>&1 | output
+
+    info "building musl runtime"
+    make -C "$MUSL_BUILD" -j"$J" AR="$TARGET-ar" RANLIB="$TARGET-ranlib" \
+        DESTDIR="$TOOLCHAIN_RUNTIME" install-libs 2>&1 | output
 
     fetch -b "$TWS/kernel-headers.tar.gz" "$KERNEL_SRC_URL" "$KERNEL_SRC_SHA256"
     mkdir -p "$TWS/linux-headers"

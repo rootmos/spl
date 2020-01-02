@@ -21,10 +21,6 @@ initramfs_list() {
     else
         error "don't know how to handle: $1"
     fi
-
-    echo "dir /lib 0555 0 0"
-    echo "slink /lib/ld-musl-$(cut -d- -f1 <<< "$TARGET").so.1 /usr/lib/libc.so 0555 0 0"
-    echo "file /usr/lib/libc.so $TOOLCHAIN_PREFIX/lib/libc.so 0555 0 0"
 }
 
 initramfs_mk() {

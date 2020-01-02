@@ -24,7 +24,7 @@ shift $((OPTIND-1))
 
 if [ "$RPI_VERSION" = "3" ]; then
     export ARCH=arm64
-    export TARGET=aarch64-linux-musl
+    export TARGET=aarch64-linux-muslhf
 else
     error "unsupported Raspberry Pi version: $RPI_VERSION"
 fi

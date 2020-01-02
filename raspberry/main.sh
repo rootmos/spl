@@ -38,6 +38,9 @@ if [ -n "${SITE-}" ]; then
     tar -cf- -C "$SITE" . | tar -xf- -C "$ROOT"
 fi
 
+info "install runtime"
+tar -cf- -C "$TOOLCHAIN_ROOT/runtime" . | tar -xf- -C "$ROOT"
+
 info "create root initramfs"
 initramfs_list "$ROOT" | tee "$WS/root.list" | output
 initramfs_mk "$WS/root.cpio.gz" < "$WS/root.list"
