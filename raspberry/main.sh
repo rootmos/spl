@@ -17,16 +17,20 @@ kernel_install "$BOOT"
 # userland
 busybox_install "$ROOT"
 
+should_install_pkg() {
+    [ -f "${SITE-/dev/null}/.pkg" ] && grep -cq "^$1" "$SITE/.pkg"
+}
+
 if should_install_pkg ncurses; then
-    ncurses_install "$ROOT"
+    ncurses_install "$ROOT/usr"
 fi
 
 if should_install_pkg alsa-lib; then
-    alsa_lib_install "$ROOT"
+    alsa_lib_install "$ROOT/usr"
 fi
 
 if should_install_pkg alsa-utils; then
-    alsa_utils_install "$ROOT"
+    alsa_utils_install "$ROOT/usr"
 fi
 
 if [ -n "${SITE-}" ]; then

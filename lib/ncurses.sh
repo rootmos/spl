@@ -22,10 +22,11 @@ EOF
 
     info "configuring ncurses"
     (cd "$WS/ncurses/build" && ../configure \
-        --prefix="$1" --host="$TARGET" \
+        --prefix="$TOOLCHAIN_PREFIX" --host="$TARGET" --exec-prefix="$1" \
         --enable-pc-files --with-pkg-config-libdir="$PKG_CONFIG_PATH" \
         --disable-nls --without-manpages \
         --enable-widec \
+        --with-shared --with-cxx-shared \
         ) 2>&1 | output
 
     info "building ncurses"
