@@ -10,12 +10,24 @@ mkdir -p "$ROOT" "$BOOT"
 TOOLCHAIN_ROOT=$WS/toolchain
 toolchain "$TOOLCHAIN_ROOT"
 source "$TOOLCHAIN_ROOT"/.env
+
+# kernel
 kernel_install "$BOOT"
 
-ncurses_install "$TOOLCHAIN_PREFIX"
-alsa_lib_install "$TOOLCHAIN_PREFIX"
-alsa_utils_install "$TOOLCHAIN_PREFIX"
+# userland
 busybox_install "$ROOT"
+
+if should_install_pkg ncurses; then
+    ncurses_install "$ROOT"
+fi
+
+if should_install_pkg alsa-lib; then
+    alsa_lib_install "$ROOT"
+fi
+
+if should_install_pkg alsa-utils; then
+    alsa_utils_install "$ROOT"
+fi
 
 if [ -n "${SITE-}" ]; then
     info "installing site files"

@@ -28,3 +28,7 @@ if [ "$RPI_VERSION" = "3" ]; then
 else
     error "unsupported Raspberry Pi version: $RPI_VERSION"
 fi
+
+should_install_pkg() {
+    [ -f "${SITE-/dev/null}/.pkg" ] && grep -cq "^$1" "$SITE/.pkg"
+}
