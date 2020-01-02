@@ -12,18 +12,19 @@ toolchain "$TOOLCHAIN_ROOT"
 source "$TOOLCHAIN_ROOT"/.env
 kernel_install "$BOOT"
 
-#ncurses_install "$TOOLCHAIN_PREFIX"
-#alsa_lib_install "$TOOLCHAIN_PREFIX"
-#alsa_utils_install "$TOOLCHAIN_PREFIX"
+ncurses_install "$TOOLCHAIN_PREFIX"
+alsa_lib_install "$TOOLCHAIN_PREFIX"
+alsa_utils_install "$TOOLCHAIN_PREFIX"
 busybox_install "$ROOT"
+
+if [ -n "${SITE-}" ]; then
+    info "installing site files"
+    tar -cf- -C "$SITE" . | tar -xf- -C "$ROOT"
+fi
 
 info "create root initramfs"
 initramfs_list "$ROOT" | tee "$WS/root.list" | output
 initramfs_mk "$WS/root.cpio.gz" < "$WS/root.list"
-
-if [ "$QEMU" -eq 1 ]; then
-    qemu-aarch64
-fi
 
 BOOTCODE=$BOOT/bootcode.bin
 fetch "$BOOTCODE" "$BOOTCODE_URL" "$BOOTCODE_SHA256"
@@ -39,15 +40,18 @@ cat <<EOF > "$BOOT/cmdline.txt"
 console=serial0,115200 root=/dev/ram0 init=/sbin/init
 EOF
 cat <<EOF > "$BOOT/config.txt"
-disable_splash=1
 start_file=start.elf
 fixup_file=fixup.dat
 cmdline=cmdline.txt
 initramfs root.cpio.gz followkernel
-dtoverlay=disable-bt
 kernel=kernel.img
+EOF
+if [ "$RPI_VERSION" = "3" ]; then
+    cat <<EOF >> "$BOOT/config.txt"
+dtoverlay=bt-disable
 arm_64bit=1
 EOF
+fi
 
 info "creating filesystem"
 dd if=/dev/zero of="$WS/boot.img" bs=1K count="$((SIZE_MB-1))K" 2>&1 | output

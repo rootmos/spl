@@ -53,11 +53,6 @@ toolchain() {
                 "$ARCH != $(cat "$TOOLCHAIN_ROOT/.arch")"
         fi
 
-        if [ "$KERNEL_ARCH" != "$(cat "$TOOLCHAIN_ROOT/.kernel_arch")" ]; then
-            error "incorrect kernel arch pulled from cache:" \
-                "$KERNEL_ARCH != $(cat "$TOOLCHAIN_ROOT/.kernel_arch")"
-        fi
-
         if [ "$TARGET" != "$(cat "$TOOLCHAIN_ROOT/.target")" ]; then
             error "incorrect target pulled from cache:" \
                 "$TARGET != $(cat "$TOOLCHAIN_ROOT/.target")"
@@ -127,7 +122,7 @@ toolchain() {
     fetch -b "$TWS/kernel-headers.tar.gz" "$KERNEL_SRC_URL" "$KERNEL_SRC_SHA256"
     mkdir -p "$TWS/linux-headers"
     tar xf "$TWS/kernel-headers.tar.gz" -C "$TWS/linux-headers" --strip-components=1 | output
-    make -C "$TWS/linux-headers" ARCH="$KERNEL_ARCH" CC="$XGCC" LIBCC="$LIBCC" \
+    make -C "$TWS/linux-headers" CC="$XGCC" LIBCC="$LIBCC" \
         INSTALL_HDR_PATH="$TOOLCHAIN_PREFIX" headers_install | output
 
     info "building gcc"
@@ -162,7 +157,6 @@ toolchain() {
 
     echo "$TARGET" > "$TOOLCHAIN_ROOT"/.target
     echo "$ARCH" > "$TOOLCHAIN_ROOT"/.arch
-    echo "$KERNEL_ARCH" > "$TOOLCHAIN_ROOT"/.kernel_arch
 
     tar -cvjf "$WS/toolchain.tar.bz2" -C "$TOOLCHAIN_ROOT" . | output
     put_cache "$WS/toolchain.tar.bz2"
