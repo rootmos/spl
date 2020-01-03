@@ -1,0 +1,9 @@
+#!/bin/sh
+
+echo "Hello SPL world!"
+uname -a
+
+mkdir /proc /sys
+mount -a
+
+aconnect -l

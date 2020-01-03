@@ -1,5 +1,7 @@
-lib/preamble.sh
+lib/shebang.sh
+raspberry/opts.sh
 lib/log.sh
+lib/setup.sh
 lib/cache.sh
 lib/fetch.sh
 raspberry/versions.sh

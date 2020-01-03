@@ -2,28 +2,48 @@ if [ ! -b "${BLKDEV-}" ] && [ -z "${OUT-}" ]; then
     error "neither a block device nor an output file was specified"
 fi
 
-APP=${1-app}
-SIZE_MB=${SIZE_MB-20}
+SIZE_MB=${SIZE_MB-50}
 
 ROOT=$WS/root
-mkdir -p "$ROOT"
+BOOT=$WS/boot
+mkdir -p "$ROOT" "$BOOT"
 TOOLCHAIN_ROOT=$WS/toolchain
 toolchain "$TOOLCHAIN_ROOT"
 source "$TOOLCHAIN_ROOT"/.env
-ncurses_install "$TOOLCHAIN_PREFIX"
-alsa_lib_install "$TOOLCHAIN_PREFIX"
-alsa_utils_install "$TOOLCHAIN_PREFIX"
 
+# kernel
+kernel_install "$BOOT"
+
+# userland
 busybox_install "$ROOT"
+
+should_install_pkg() {
+    [ -f "${SITE-/dev/null}/.pkg" ] && grep -cq "^$1" "$SITE/.pkg"
+}
+
+if should_install_pkg ncurses; then
+    ncurses_install "$ROOT"
+fi
+
+if should_install_pkg alsa-lib; then
+    alsa_lib_install "$ROOT"
+fi
+
+if should_install_pkg alsa-utils; then
+    alsa_utils_install "$ROOT"
+fi
+
+if [ -n "${SITE-}" ]; then
+    info "installing site files"
+    tar -cf- -C "$SITE" . | tar -xf- -C "$ROOT"
+fi
+
+info "install runtime"
+toolchain_install_runtime "$ROOT"
 
 info "create root initramfs"
 initramfs_list "$ROOT" | tee "$WS/root.list" | output
 initramfs_mk "$WS/root.cpio.gz" < "$WS/root.list"
-
-BOOT=$WS/boot
-mkdir "$BOOT"
-
-kernel_install "$BOOT"
 
 BOOTCODE=$BOOT/bootcode.bin
 fetch "$BOOTCODE" "$BOOTCODE_URL" "$BOOTCODE_SHA256"
@@ -41,12 +61,18 @@ EOF
 cat <<EOF > "$BOOT/config.txt"
 start_file=start.elf
 fixup_file=fixup.dat
-kernel=kernel.img
 cmdline=cmdline.txt
 initramfs root.cpio.gz followkernel
+kernel=kernel.img
 EOF
+if [ "$RPI_VERSION" = "3" ]; then
+    cat <<EOF >> "$BOOT/config.txt"
+dtoverlay=disable-bt
+arm_64bit=1
+EOF
+fi
 
-info "creating filesystem filesystem "
+info "creating filesystem"
 dd if=/dev/zero of="$WS/boot.img" bs=1K count="$((SIZE_MB-1))K" 2>&1 | output
 mkfs.fat "$WS/boot.img" | output
 
@@ -70,7 +96,7 @@ _clean_main() {
     true
 }
 
-IMG=$WS/$APP.img
+IMG=$WS/app.img
 info "formatting (${SIZE_MB}M)"
 dd if=/dev/zero of="$IMG" bs=1K count="${SIZE_MB}K" 2>&1 | output
 sfdisk "$IMG" <<< "2048,,c,*" | output

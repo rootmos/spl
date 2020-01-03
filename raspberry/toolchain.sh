@@ -1,9 +1,7 @@
 toolchain_env() {
     TOOLCHAIN_ROOT=$(readlink -f "$1")
     TOOLCHAIN_PREFIX=$TOOLCHAIN_ROOT/usr
-    TARGET=$(cat "$TOOLCHAIN_ROOT"/.target)
     cat <<EOF
-TARGET=$TARGET
 export PATH=$TOOLCHAIN_PREFIX/bin:\$PATH
 export HOSTCC=${HOSTCC-gcc} HOSTLD=${HOSTLD-ld}
 export LD=$TARGET-ld
@@ -31,7 +29,6 @@ toolchain_configure_gcc() {
         --target="$TARGET" --prefix="$TOOLCHAIN_PREFIX" \
         --with-sysroot=/ \
         --with-build-sysroot="$TOOLCHAIN_ROOT" \
-        --with-arch=armv6 --with-fpu=vfp --with-float=hard \
         --enable-languages=c,c++ \
         --disable-nls --disable-multilib \
         --disable-libquadmath \
@@ -43,21 +40,29 @@ toolchain_configure_gcc() {
 
 toolchain() {
     TOOLCHAIN_ROOT=$1
-    TOOLCHAIN_SHA256=${TOOLCHAIN_SHA256-${2-}}
+    TOOLCHAIN_RUNTIME=$TOOLCHAIN_ROOT/runtime
 
-    if is_cached "$TOOLCHAIN_SHA256"; then
+    if is_cached "${TOOLCHAIN_SHA256-}"; then
+        info "installing toolchain ($TARGET, cached: $TOOLCHAIN_SHA256)"
         borrow_cached "$TOOLCHAIN_SHA256" "$WS/toolchain.tar.bz2"
         mkdir -p "$TOOLCHAIN_ROOT"
         tar -xvf "$WS/toolchain.tar.bz2" -C "$TOOLCHAIN_ROOT" | output
         toolchain_env "$TOOLCHAIN_ROOT" > "$TOOLCHAIN_ROOT"/.env
+
+        if [ "$ARCH" != "$(cat "$TOOLCHAIN_ROOT/.arch")" ]; then
+            error "incorrect arch pulled from cache:" \
+                "$ARCH != $(cat "$TOOLCHAIN_ROOT/.arch")"
+        fi
+
+        if [ "$TARGET" != "$(cat "$TOOLCHAIN_ROOT/.target")" ]; then
+            error "incorrect target pulled from cache:" \
+                "$TARGET != $(cat "$TOOLCHAIN_ROOT/.target")"
+        fi
         return
     fi
 
-    TARGET=arm-linux-musleabihf
-    BARE_TARGET=arm-none-eabihf
     mkdir "$TOOLCHAIN_ROOT"
     TWS=$(mktemp --tmpdir="$TMP" --directory toolchain.XXXXXX)
-    BUILD_SYSROOT=$TWS/sys-root
 
     # NB make sure the following is compatible with toolchain_env above
     TOOLCHAIN_PREFIX=$TOOLCHAIN_ROOT/usr
@@ -74,8 +79,6 @@ toolchain() {
     mkdir -p "$BINUTILS_BUILD"
     (cd "$BINUTILS_BUILD" && "$BINUTILS_SRC/configure" \
         --target="$TARGET" --prefix="$TOOLCHAIN_PREFIX" \
-        --with-sysroot=/ \
-        --with-arch=armv6 --with-fpu=vfp --with-float=hard \
         --disable-multilib --disable-nls \
         --enable-deterministic-archives) 2>&1 | output
     info "building binutils"
@@ -117,10 +120,14 @@ toolchain() {
     info "building musl libc"
     make -C "$MUSL_BUILD" -j"$J" AR="$TARGET-ar" RANLIB="$TARGET-ranlib" install 2>&1 | output
 
+    info "building musl runtime"
+    make -C "$MUSL_BUILD" -j"$J" AR="$TARGET-ar" RANLIB="$TARGET-ranlib" \
+        DESTDIR="$TOOLCHAIN_RUNTIME" install-libs 2>&1 | output
+
     fetch -b "$TWS/kernel-headers.tar.gz" "$KERNEL_SRC_URL" "$KERNEL_SRC_SHA256"
     mkdir -p "$TWS/linux-headers"
     tar xf "$TWS/kernel-headers.tar.gz" -C "$TWS/linux-headers" --strip-components=1 | output
-    make -C "$TWS/linux-headers" ARCH=arm CC="$XGCC" LIBCC="$LIBCC" \
+    make -C "$TWS/linux-headers" CC="$XGCC" LIBCC="$LIBCC" \
         INSTALL_HDR_PATH="$TOOLCHAIN_PREFIX" headers_install | output
 
     info "building gcc"
@@ -154,9 +161,14 @@ toolchain() {
     make -C "$PKG_CONFIG_BUILD" -j"$J" install-strip 2>&1 | output
 
     echo "$TARGET" > "$TOOLCHAIN_ROOT"/.target
+    echo "$ARCH" > "$TOOLCHAIN_ROOT"/.arch
 
     tar -cvjf "$WS/toolchain.tar.bz2" -C "$TOOLCHAIN_ROOT" . | output
     put_cache "$WS/toolchain.tar.bz2"
 
     toolchain_env "$TOOLCHAIN_ROOT" > "$TOOLCHAIN_ROOT"/.env
+}
+
+toolchain_install_runtime() {
+    tar -cf- -C "$TOOLCHAIN_ROOT/runtime" . | tar -xf- -C "$1"
 }

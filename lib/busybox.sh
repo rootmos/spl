@@ -12,11 +12,17 @@ busybox_install() {
     cat <<EOF >> "$WS/busybox/.config"
 CONFIG_PREFIX="$1"
 EOF
+
+    info "installing busybox"
     make -C "$WS/busybox" CROSS_COMPILE="$TARGET-" -j"$J" 2>&1 V=1 | output
     make -C "$WS/busybox" CROSS_COMPILE="$TARGET-" -j"$J" install 2>&1 | output
 }
 
 busybox_menuconfig() {
+    TOOLCHAIN_ROOT=$WS/root
+    toolchain "$TOOLCHAIN_ROOT"
+    source "$TOOLCHAIN_ROOT"/.env
+
     busybox_fetch
     busybox_config > "$WS/busybox/.config"
     make -C "$WS/busybox" CROSS_COMPILE="$TARGET-" menuconfig < /dev/tty
