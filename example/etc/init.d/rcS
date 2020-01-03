@@ -5,3 +5,5 @@ uname -a
 
 mkdir /proc /sys
 mount -a
+
+aconnect -l

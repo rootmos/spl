@@ -22,15 +22,15 @@ should_install_pkg() {
 }
 
 if should_install_pkg ncurses; then
-    ncurses_install "$ROOT/usr"
+    ncurses_install "$ROOT"
 fi
 
 if should_install_pkg alsa-lib; then
-    alsa_lib_install "$ROOT/usr"
+    alsa_lib_install "$ROOT"
 fi
 
 if should_install_pkg alsa-utils; then
-    alsa_utils_install "$ROOT/usr"
+    alsa_utils_install "$ROOT"
 fi
 
 if [ -n "${SITE-}" ]; then

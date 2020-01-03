@@ -3,7 +3,7 @@ initramfs_list() {
         LOCAL="$1"
         REMOTE="${2-}"
         find "$LOCAL" -mindepth 1 \
-            -not \( -name ".pkg" -or -name "*.a" \) \
+            -not \( -name ".pkg" -or -name "*.a" -or -name "*.h" \) \
             | while read -r x; do
             LOCATION=$(sed 's,^'"$LOCAL"','"$REMOTE"',' <<< "$x")
             if [ -d "$x" ]; then

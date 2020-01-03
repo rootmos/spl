@@ -8,14 +8,15 @@ alsa_lib_install() {
     mkdir -p "$WS/alsa-lib/build"
     tar xf "$WS/alsa-lib.tar.bz2" -C "$WS/alsa-lib" --strip-components=1 | output
     info "configuring alsa-lib"
-    (cd "$WS/alsa-lib/build" && ../configure --help) | output # TODO: remove
     (cd "$WS/alsa-lib/build" && ../configure \
-        --prefix="$1" --host="$TARGET" \
+        --host="$TARGET" \
         --disable-python --disable-alisp \
-        --disable-old-symbols) | output
+        --disable-old-symbols \
+        ) | output
     info "building alsa-lib"
     make -C "$WS/alsa-lib/build" -j"$J" 2>&1 V=1 | output
-    make -C "$WS/alsa-lib/build" -j"$J" install-strip 2>&1 | output
+    make -C "$WS/alsa-lib/build" -j"$J" DESTDIR="$TOOLCHAIN_ROOT" install-strip 2>&1 | output
+    make -C "$WS/alsa-lib/build" -j"$J" DESTDIR="$1" install-strip 2>&1 | output
 }
 
 alsa_utils_install() {
@@ -26,11 +27,11 @@ alsa_utils_install() {
     tar xf "$WS/alsa-utils.tar.bz2" -C "$WS/alsa-utils" --strip-components=1 | output
     info "configuring alsa-utils"
     (cd "$WS/alsa-utils/build" && ../configure \
-        --prefix="$1" --host="$TARGET" \
+        --host="$TARGET" \
         --with-udev-rules-dir="$1/lib/udev/rules.d" \
         --with-systemdsystemunitdir= \
         ) 2>&1 | output
     info "building alsa-utils"
     make -C "$WS/alsa-utils/build" -j"$J" 2>&1 V=1 | output
-    make -C "$WS/alsa-utils/build" -j"$J" install-strip 2>&1 | output
+    make -C "$WS/alsa-utils/build" -j"$J" DESTDIR="$1" install-strip 2>&1 | output
 }

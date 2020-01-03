@@ -22,7 +22,7 @@ EOF
 
     info "configuring ncurses"
     (cd "$WS/ncurses/build" && ../configure \
-        --prefix="$TOOLCHAIN_PREFIX" --host="$TARGET" --exec-prefix="$1" \
+        --prefix="$TOOLCHAIN_PREFIX" --host="$TARGET" --exec-prefix="$1/usr" \
         --enable-pc-files --with-pkg-config-libdir="$PKG_CONFIG_PATH" \
         --disable-nls --without-manpages \
         --enable-widec \
