@@ -39,7 +39,7 @@ if [ -n "${SITE-}" ]; then
 fi
 
 info "install runtime"
-tar -cf- -C "$TOOLCHAIN_ROOT/runtime" . | tar -xf- -C "$ROOT"
+toolchain_install_runtime "$ROOT"
 
 info "create root initramfs"
 initramfs_list "$ROOT" | tee "$WS/root.list" | output

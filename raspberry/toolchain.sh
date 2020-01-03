@@ -168,3 +168,7 @@ toolchain() {
 
     toolchain_env "$TOOLCHAIN_ROOT" > "$TOOLCHAIN_ROOT"/.env
 }
+
+toolchain_install_runtime() {
+    tar -cf- -C "$TOOLCHAIN_ROOT/runtime" . | tar -xf- -C "$1"
+}
