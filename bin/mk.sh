@@ -47,7 +47,12 @@ if [ ! "$ACTION" = "collect" ]; then
     exit 1
 fi
 
-echo "# generated: $(date -Is)" > "$OUT"
+cat <<EOF > "$OUT"
+#!/bin/bash
+# generated: $(date -Is)"
+
+set -o nounset -o pipefail -o errexit
+EOF
 chmod +x "$OUT"
 
 while read -r LINE; do

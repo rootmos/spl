@@ -1,0 +1,8 @@
+lib/log.sh
+debian/opts.sh
+lib/setup.sh
+lib/cache.sh
+lib/fetch.sh
+-f kernel_config debian/kernel.config
+debian/kernel.sh
+debian/main.sh

@@ -1,5 +1,7 @@
 raspberry.sh
 raspberry.*.sh
+debian.sh
+debian.*.sh
+debian.img
 .cache
-.toolchain
 .log

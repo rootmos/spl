@@ -1,4 +1,3 @@
-lib/shebang.sh
 lib/log.sh
 raspberry/opts.sh
 lib/setup.sh

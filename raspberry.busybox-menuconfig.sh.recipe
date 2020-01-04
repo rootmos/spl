@@ -1,6 +1,5 @@
-lib/shebang.sh
-raspberry/opts.sh
 lib/log.sh
+raspberry/opts.sh
 lib/setup.sh
 lib/cache.sh
 lib/fetch.sh
