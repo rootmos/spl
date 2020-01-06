@@ -1,12 +1,12 @@
 SUDO=${SUDO-}
-QEMU=0
 RPI_VERSION=${RPI_VERSION-3}
-while getopts "13vc:Sj:l:d:o:K:-s:DT:" OPT; do
+while getopts "13vqc:Sj:l:d:o:K:-s:DT:" OPT; do
     case $OPT in
         1) RPI_VERSION=1 ;;
         3) RPI_VERSION=3 ;;
         D) DEBUG_SHELL=1 ;;
         v) VERBOSE=1 ;;
+        q) QEMU=1 ;;
         c) CACHE=${OPTARG:-$HOME/.cache/spl} ;;
         s) SITE=$OPTARG ;;
         S) SUDO=sudo ;;

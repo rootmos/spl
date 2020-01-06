@@ -1,5 +1,6 @@
 lib/log.sh
 debian/opts.sh
+-l "export SITE BLKDEV OUT"
 lib/setup.sh
 lib/cache.sh
 lib/fetch.sh

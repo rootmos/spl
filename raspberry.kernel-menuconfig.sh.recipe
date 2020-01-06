@@ -7,4 +7,4 @@ raspberry/versions.sh
 raspberry/toolchain.sh
 -f kernel_config raspberry/kernel.config
 raspberry/kernel.sh
--l "kernel_menuconfig \$1"
+-l "kernel_menuconfig \"\$1\""

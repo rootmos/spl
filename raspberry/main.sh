@@ -1,5 +1,7 @@
 if [ ! -b "${BLKDEV-}" ] && [ -z "${OUT-}" ]; then
-    error "neither a block device nor an output file was specified"
+    if [ -z "${QEMU-}" ]; then
+        error "neither a block device nor an output file was specified"
+    fi
 fi
 
 SIZE_MB=${SIZE_MB-50}
@@ -44,6 +46,30 @@ toolchain_install_runtime "$ROOT"
 info "create root initramfs"
 initramfs_list "$ROOT" | tee "$WS/root.list" | output
 initramfs_mk "$WS/root.cpio.gz" < "$WS/root.list"
+
+if [ -n "${QEMU-}" ]; then
+    QEMU_TARGET=qemu-system-$(cut -d- -f1 <<< "$TARGET")
+    info "running $QEMU_TARGET"
+    "$QEMU_TARGET" -machine virt -cpu cortex-a53 \
+        -kernel "$BOOT/kernel.img" -initrd "$WS/root.cpio.gz" \
+        -append "console=hvc0 root=/dev/ram0" \
+        -chardev stdio,id=stdio,mux=on,signal=on \
+        -device virtio-serial-pci -device virtconsole,chardev=stdio \
+        -display none
+    exit $?
+fi
+
+# firmware
+FIRMWARE_COMMIT=0c01dbefba45a08c47f8538d5a071a0fba6b7e83
+
+BOOTCODE_URL=https://github.com/raspberrypi/firmware/raw/$FIRMWARE_COMMIT/boot/bootcode.bin
+BOOTCODE_SHA256=6505bbc8798698bd8f1dff30789b22289ebb865ccba7833b87705264525cbe46
+
+START_ELF_URL=https://github.com/raspberrypi/firmware/raw/$FIRMWARE_COMMIT/boot/start.elf
+START_ELF_SHA256=442919907e4b7d8f007b79df1aa1e12f98e09ab393da65b48cd2b2af04301b7d
+
+FIXUP_URL=https://github.com/raspberrypi/firmware/raw/$FIRMWARE_COMMIT/boot/fixup.dat
+FIXUP_SHA256=85a54bf460aa3ff0d04ee54bc606bf3af39a2c5194e519ab278cf74ecf75f7a8
 
 BOOTCODE=$BOOT/bootcode.bin
 fetch "$BOOTCODE" "$BOOTCODE_URL" "$BOOTCODE_SHA256"
