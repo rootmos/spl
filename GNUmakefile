@@ -4,7 +4,7 @@ export LOG_FILE ?= .log
 all: check raspberry.sh debian.sh
 
 test-raspberry: raspberry.sh
-	./$< -3 -s example -q
+	./$< -3 -s example -o raspberry.img
 
 test-debian: debian.sh
 	./$< -o debian.img

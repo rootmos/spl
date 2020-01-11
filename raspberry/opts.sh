@@ -1,5 +1,4 @@
 SUDO=${SUDO-}
-QEMU=0
 RPI_VERSION=${RPI_VERSION-3}
 while getopts "13vc:Sj:l:d:o:K:-s:DT:" OPT; do
     case $OPT in

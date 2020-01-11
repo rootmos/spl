@@ -87,7 +87,7 @@ $SUDO mount -o loop "$WS/boot.img" "$MNT"
 info "populate boot filesystem "
 $SUDO cp "$WS/root.cpio.gz" "$BOOT"
 info "boot filesystem size: $(du -sh "$BOOT" | cut -f1)"
-$SUDO rsync -rv "$BOOT"/ "$MNT" | output
+tar -cf- --owner=0 --group=0 -C "$BOOT" . | sudo tar -xvf- -C "$MNT" | output
 
 info "unmount filesystem"
 sync "$MNT"
