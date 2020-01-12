@@ -7,7 +7,7 @@ kernel_menuconfig() {
     mkdir -p "$WS/linux"
     tar xf "$WS/kernel.tar.gz" -C "$WS/linux" --strip-components=1 | output
 
-    kernel_config > "$WS/linux/.config"
+    kernel${RPI_VERSION}_config > "$WS/linux/.config"
     make -C "$WS/linux" CROSS_COMPILE="$TARGET-" menuconfig
     cp "$WS/linux/.config" "$1"
 }
@@ -24,17 +24,21 @@ kernel_install() {
         tar xf "$WS/kernel.tar.gz" -C "$WS/linux" --strip-components=1 | output
 
         info "configure kernel"
-        kernel_config > "$WS/linux/.config"
+        kernel${RPI_VERSION}_config > "$WS/linux/.config"
 
         info "compile kernel"
+        case "$RPI_VERSION" in
+            1) KERNEL=zImage; DTB_PREFIX= ;;
+            3) KERNEL=Image; DTB_PREFIX=/broadcom ;;
+        esac
         make -C "$WS/linux" CROSS_COMPILE="$TARGET-" V=1 \
-            Image dtbs -j"$J" 2>&1 | output
+            "$KERNEL" dtbs -j"$J" 2>&1 | output
 
         info "install kernel"
         "$WS/linux/scripts/mkknlimg" \
-            "$WS/linux/arch/$ARCH/boot/Image" "$BOOT/kernel.img" \
+            "$WS/linux/arch/$ARCH/boot/$KERNEL" "$BOOT/kernel.img" \
             | output
-        cp "$WS/linux/arch/$ARCH/boot/dts/broadcom"/*.dtb "$BOOT"
+        cp "$WS/linux/arch/$ARCH/boot/dts$DTB_PREFIX"/*.dtb "$BOOT"
         mkdir -p "$BOOT/overlays"
         cp "$WS/linux/arch/$ARCH/boot/dts/overlays"/*.dtbo "$BOOT/overlays/"
         cp "$WS/linux/arch/$ARCH/boot/dts/overlays/README" "$BOOT/overlays/"

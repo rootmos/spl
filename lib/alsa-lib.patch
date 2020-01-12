@@ -1,0 +1,12 @@
+diff -ru a/ltmain.sh b/ltmain.sh
+--- a/ltmain.sh	2019-11-14 18:12:18.000000000 +0100
++++ b/ltmain.sh	2020-01-13 07:10:01.221166455 +0100
+@@ -10913,7 +10913,7 @@
+ dlpreopen='$dlprefiles'
+ 
+ # Directory that this library needs to be installed in:
+-libdir='$install_libdir'"
++libdir=\$DESTDIR'$install_libdir'"
+ 	  if test no,yes = "$installed,$need_relink"; then
+ 	    $ECHO >> $output "\
+ relink_command=\"$relink_command\""

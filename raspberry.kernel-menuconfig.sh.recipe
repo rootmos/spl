@@ -1,10 +1,13 @@
 lib/log.sh
 raspberry/opts.sh
+-l "false && export ACTION OUT BLKDEV SITE"
 lib/setup.sh
 lib/cache.sh
 lib/fetch.sh
 raspberry/versions.sh
+-l "false && export FIXUP_SHA256 FIXUP_URL START_ELF_SHA256 START_ELF_URL BOOTCODE_SHA256 BOOTCODE_URL"
 raspberry/toolchain.sh
--f kernel_config raspberry/kernel.config
+-f kernel1_config raspberry/kernel1.config
+-f kernel3_config raspberry/kernel3.config
 raspberry/kernel.sh
--l "kernel_menuconfig \$1"
+-l "kernel_menuconfig \"\$1\""

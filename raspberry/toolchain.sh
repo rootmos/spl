@@ -1,46 +1,39 @@
 toolchain_env() {
     TOOLCHAIN_ROOT=$(readlink -f "$1")
-    TOOLCHAIN_PREFIX=$TOOLCHAIN_ROOT/usr
+    TOOLCHAIN_PREFIX=/usr
     cat <<EOF
-export PATH=$TOOLCHAIN_PREFIX/bin:\$PATH
+export PATH=$TOOLCHAIN_ROOT$TOOLCHAIN_PREFIX/bin:\$PATH
 export HOSTCC=${HOSTCC-gcc} HOSTLD=${HOSTLD-ld}
 export LD=$TARGET-ld
 export AS=$TARGET-as
 export CC=$TARGET-gcc CFLAGS="--sysroot=$TOOLCHAIN_ROOT"
 export CPP=$TARGET-cpp CPPFLAGS="--sysroot=$TOOLCHAIN_ROOT"
 export CXX=$TARGET-g++ CXXFLAGS="--sysroot=$TOOLCHAIN_ROOT"
-export PKG_CONFIG=$TOOLCHAIN_PREFIX/bin/$TARGET-pkg-config
-export PKG_CONFIG_PATH=$TOOLCHAIN_PREFIX/lib/pkgconfig
+export PKG_CONFIG=$TOOLCHAIN_ROOT$TOOLCHAIN_PREFIX/bin/$TARGET-pkg-config
+export PKG_CONFIG_PATH=$TOOLCHAIN_ROOT$TOOLCHAIN_PREFIX/lib/pkgconfig
+export CMAKE_PREFIX_PATH=$TOOLCHAIN_ROOT$TOOLCHAIN_PREFIX:${CMAKE_PREFIX_PATH-}
 EOF
 }
 
 toolchain_configure_gcc() {
-    (cd "$1" && env \
-        AR_FOR_TARGET="$TARGET-ar" \
-        AS_FOR_TARGET="$TARGET-as" \
-        LD_FOR_TARGET="$TARGET-ld" \
-        NM_FOR_TARGET="$TARGET-nm" \
-        OBJCOPY_FOR_TARGET="$TARGET-objcopy" \
-        OBJDUMP_FOR_TARGET="$TARGET-objdump" \
-        RANLIB_FOR_TARGET="$TARGET-ranlib" \
-        READELF_FOR_TARGET="$TARGET-readelf" \
-        STRIP_FOR_TARGET="$TARGET-strip" \
-        "$GCC_SRC/configure" \
+    (cd "$1" && "$GCC_SRC/configure" \
         --target="$TARGET" --prefix="$TOOLCHAIN_PREFIX" \
         --with-sysroot=/ \
         --with-build-sysroot="$TOOLCHAIN_ROOT" \
-        --enable-languages=c,c++ \
-        --disable-nls --disable-multilib \
+        --enable-languages="$2" \
+        --disable-nls \
+        --disable-multilib \
         --disable-libquadmath \
-        --disable-libmudflap --disable-libsanitizer \
+        --disable-libmudflap \
+        --disable-libsanitizer \
         --disable-libmpx \
+        --disable-gcov \
         --without-isl \
         2>&1 ) | output
 }
 
 toolchain() {
     TOOLCHAIN_ROOT=$1
-    TOOLCHAIN_RUNTIME=$TOOLCHAIN_ROOT/runtime
 
     if is_cached "${TOOLCHAIN_SHA256-}"; then
         info "installing toolchain ($TARGET, cached: $TOOLCHAIN_SHA256)"
@@ -65,8 +58,8 @@ toolchain() {
     TWS=$(mktemp --tmpdir="$TMP" --directory toolchain.XXXXXX)
 
     # NB make sure the following is compatible with toolchain_env above
-    TOOLCHAIN_PREFIX=$TOOLCHAIN_ROOT/usr
-    export PATH=$TOOLCHAIN_PREFIX/bin:$PATH
+    TOOLCHAIN_PREFIX=/usr
+    export PATH=$TOOLCHAIN_ROOT$TOOLCHAIN_PREFIX/bin:$PATH
 
     info "building toolchain ($TARGET)"
 
@@ -83,7 +76,8 @@ toolchain() {
         --enable-deterministic-archives) 2>&1 | output
     info "building binutils"
     make -C "$BINUTILS_BUILD" -j"$J" 2>&1 | output
-    make -C "$BINUTILS_BUILD" -j"$J" install-strip 2>&1 | output
+    make -C "$BINUTILS_BUILD" -j"$J" \
+        DESTDIR="$TOOLCHAIN_ROOT" install-strip 2>&1 | output
 
     fetch -b "$TWS/gcc.tar.xz" "$GCC_URL" "$GCC_SHA256"
     GCC_SRC=$TWS/gcc_src
@@ -92,12 +86,12 @@ toolchain() {
     info "configuring gcc"
     GCC_BUILD1=$TWS/gcc_build1
     mkdir -p "$GCC_BUILD1"
-    toolchain_configure_gcc "$GCC_BUILD1"
+    toolchain_configure_gcc "$GCC_BUILD1" "c"
 
     info "building xgcc"
-    mkdir -p "$TOOLCHAIN_ROOT/usr/include"
+    mkdir -p "$TOOLCHAIN_ROOT$TOOLCHAIN_PREFIX/include"
     make -C "$GCC_BUILD1" -j"$J" all-gcc 2>&1 | output
-    XGCC="$GCC_BUILD1/gcc/xgcc -B $GCC_BUILD1/gcc"
+    XGCC="$GCC_BUILD1/gcc/xgcc -B$GCC_BUILD1/gcc"
     LIBCC="$GCC_BUILD1/$TARGET/libgcc/libgcc.a"
 
     fetch -b "$TWS/musl.tar.gz" "$MUSL_URL" "$MUSL_SHA256"
@@ -108,41 +102,46 @@ toolchain() {
     MUSL_BUILD=$TWS/musl_build
     mkdir -p "$MUSL_BUILD"
     (cd "$MUSL_BUILD" && env CC="$XGCC" LIBCC="$LIBCC" \
-        "$MUSL_SRC/configure" --target="$TARGET" --prefix="$TOOLCHAIN_PREFIX" \
+        "$MUSL_SRC/configure" \
+        --target="$TARGET" --prefix="$TOOLCHAIN_PREFIX" \
         ) | output
 
     info "installing musl libc headers"
-    make -C "$MUSL_BUILD" -j"$J" AR="$TARGET-ar" RANLIB="$TARGET-ranlib" install-headers 2>&1 | output
+    make -C "$MUSL_BUILD" -j"$J" AR="$TARGET-ar" RANLIB="$TARGET-ranlib" \
+        DESTDIR="$TOOLCHAIN_ROOT" install-headers 2>&1 | output
 
     info "building libgcc"
     make -C "$GCC_BUILD1" -j"$J" enable_shared=no all-target-libgcc 2>&1 | output
 
     info "building musl libc"
-    make -C "$MUSL_BUILD" -j"$J" AR="$TARGET-ar" RANLIB="$TARGET-ranlib" install 2>&1 | output
+    make -C "$MUSL_BUILD" -j"$J" AR="$TARGET-ar" RANLIB="$TARGET-ranlib" \
+        DESTDIR="$TOOLCHAIN_ROOT" install 2>&1 | output
 
     info "building musl runtime"
     make -C "$MUSL_BUILD" -j"$J" AR="$TARGET-ar" RANLIB="$TARGET-ranlib" \
-        DESTDIR="$TOOLCHAIN_RUNTIME" install-libs 2>&1 | output
+        DESTDIR="$TOOLCHAIN_ROOT/runtime" install-libs 2>&1 | output
 
     fetch -b "$TWS/kernel-headers.tar.gz" "$KERNEL_SRC_URL" "$KERNEL_SRC_SHA256"
     mkdir -p "$TWS/linux-headers"
     tar xf "$TWS/kernel-headers.tar.gz" -C "$TWS/linux-headers" --strip-components=1 | output
     make -C "$TWS/linux-headers" CC="$XGCC" LIBCC="$LIBCC" \
-        INSTALL_HDR_PATH="$TOOLCHAIN_PREFIX" headers_install | output
+        INSTALL_HDR_PATH="$TOOLCHAIN_ROOT$TOOLCHAIN_PREFIX" \
+        headers_install | output
 
     info "building gcc"
     GCC_BUILD2=$TWS/gcc_build2
     mkdir -p "$GCC_BUILD2"
-    toolchain_configure_gcc "$GCC_BUILD2"
+    toolchain_configure_gcc "$GCC_BUILD2" "c,c++"
     make -C "$GCC_BUILD2" -j"$J" 2>&1 | output
-    make -C "$GCC_BUILD2" -j"$J" install-strip 2>&1 | output
+    make -C "$GCC_BUILD2" -j"$J" DESTDIR="$TOOLCHAIN_ROOT" \
+        install-strip 2>&1 | output
 
     fetch -b "$TWS/linux-utils.tar.gz" "$KERNEL_SRC_URL" "$KERNEL_SRC_SHA256"
     mkdir -p "$TWS/linux-utils"
     tar xf "$TWS/linux-utils.tar.gz" -C "$TWS/linux-utils" --wildcards linux-*/usr/* \
         --strip-components=1 | output
     make -C "$TWS/linux-utils/usr" gen_init_cpio 2>&1 | output
-    install -m 755 -D -t "$TOOLCHAIN_PREFIX/bin" \
+    install -m 755 -D -t "$TOOLCHAIN_ROOT$TOOLCHAIN_PREFIX/bin" \
         "$TWS/linux-utils/usr/gen_init_cpio"
 
     fetch -b "$TWS/pkg-config.tar.gz" "$PKG_CONFIG_URL" "$PKG_CONFIG_SHA256"
@@ -158,7 +157,8 @@ toolchain() {
         ) 2>&1 | output
     info "building pkg-config"
     make -C "$PKG_CONFIG_BUILD" -j"$J" 2>&1 V=1 | output
-    make -C "$PKG_CONFIG_BUILD" -j"$J" install-strip 2>&1 | output
+    make -C "$PKG_CONFIG_BUILD" -j"$J" \
+        DESTDIR="$TOOLCHAIN_ROOT" install-strip 2>&1 | output
 
     echo "$TARGET" > "$TOOLCHAIN_ROOT"/.target
     echo "$ARCH" > "$TOOLCHAIN_ROOT"/.arch

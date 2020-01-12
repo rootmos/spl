@@ -7,12 +7,16 @@ alsa_lib_install() {
         "9f0dff1b1e8fcb68034c8cb043bcdc398138c4b5d951e86990cfe890fbadc7cf"
     mkdir -p "$WS/alsa-lib/build"
     tar xf "$WS/alsa-lib.tar.bz2" -C "$WS/alsa-lib" --strip-components=1 | output
+
+    alsa_lib_patch | patch -p1 -d "$WS/alsa-lib" | output
+
     info "configuring alsa-lib"
     (cd "$WS/alsa-lib/build" && ../configure \
         --host="$TARGET" \
         --disable-python --disable-alisp \
         --disable-old-symbols \
         ) | output
+
     info "building alsa-lib"
     make -C "$WS/alsa-lib/build" -j"$J" 2>&1 V=1 | output
     make -C "$WS/alsa-lib/build" -j"$J" DESTDIR="$TOOLCHAIN_ROOT" install-strip 2>&1 | output

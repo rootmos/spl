@@ -1,4 +1,4 @@
-if [ ! -b "${BLKDEV-}" ] && [ -z "${OUT-}" ]; then
+if [ "$ACTION" = "build" ] && [ ! -b "${BLKDEV-}" ] && [ -z "${OUT-}" ]; then
     error "neither a block device nor an output file was specified"
 fi
 
@@ -11,11 +11,13 @@ TOOLCHAIN_ROOT=$WS/toolchain
 toolchain "$TOOLCHAIN_ROOT"
 source "$TOOLCHAIN_ROOT"/.env
 
-# kernel
-kernel_install "$BOOT"
+if [ "$ACTION" = "build" ]; then
+    # kernel
+    kernel_install "$BOOT"
 
-# userland
-busybox_install "$ROOT"
+    # userland
+    busybox_install "$ROOT"
+fi
 
 should_install_pkg() {
     [ -f "${SITE-/dev/null}/.pkg" ] && grep -cq "^$1" "$SITE/.pkg"
@@ -31,6 +33,11 @@ fi
 
 if should_install_pkg alsa-utils; then
     alsa_utils_install "$ROOT"
+fi
+
+if [ "$ACTION" = "run_with_env" ]; then
+    $SHELL -c "$@"
+    exit $?
 fi
 
 if [ -n "${SITE-}" ]; then
