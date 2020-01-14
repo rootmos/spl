@@ -7,7 +7,7 @@ SIZE_MB=${SIZE_MB-50}
 ROOT=$WS/root
 BOOT=$WS/boot
 mkdir -p "$ROOT" "$BOOT"
-TOOLCHAIN_ROOT=$WS/toolchain
+export TOOLCHAIN_ROOT=$WS/toolchain
 toolchain "$TOOLCHAIN_ROOT"
 source "$TOOLCHAIN_ROOT"/.env
 
@@ -33,6 +33,10 @@ fi
 
 if should_install_pkg alsa-utils; then
     alsa_utils_install "$ROOT"
+fi
+
+if should_install_pkg libusb; then
+    libusb_install "$ROOT"
 fi
 
 if [ "$ACTION" = "run_with_env" ]; then

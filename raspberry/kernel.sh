@@ -7,7 +7,7 @@ kernel_menuconfig() {
     mkdir -p "$WS/linux"
     tar xf "$WS/kernel.tar.gz" -C "$WS/linux" --strip-components=1 | output
 
-    kernel${RPI_VERSION}_config > "$WS/linux/.config"
+    "kernel${RPI_VERSION}_config" > "$WS/linux/.config"
     make -C "$WS/linux" CROSS_COMPILE="$TARGET-" menuconfig
     cp "$WS/linux/.config" "$1"
 }
@@ -24,7 +24,7 @@ kernel_install() {
         tar xf "$WS/kernel.tar.gz" -C "$WS/linux" --strip-components=1 | output
 
         info "configure kernel"
-        kernel${RPI_VERSION}_config > "$WS/linux/.config"
+        "kernel${RPI_VERSION}_config" > "$WS/linux/.config"
 
         info "compile kernel"
         case "$RPI_VERSION" in
