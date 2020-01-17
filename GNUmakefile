@@ -28,7 +28,7 @@ configure-raspberry-kernel3: raspberry.kernel-menuconfig.sh
 	./$< -3 $(shell pwd)/raspberry/kernel3.config
 
 configure-raspberry-busybox: raspberry.busybox-menuconfig.sh
-	./$< $(shell pwd)/lib/busybox.config
+	./$< -1 $(shell pwd)/lib/busybox.config
 
 configure-debian-kernel: debian.kernel-menuconfig.sh
 	./$< $(shell pwd)/debian/kernel.config

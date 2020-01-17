@@ -1,7 +1,7 @@
 SUDO=${SUDO-}
 RPI_VERSION=${RPI_VERSION-3}
 ACTION=build
-while getopts "13vc:Sj:l:d:o:K:-s:DT:bx" OPT; do
+while getopts "13vc:Sj:l:d:o:K:-s:DT:bxu:" OPT; do
     case $OPT in
         1) RPI_VERSION=1 ;;
         3) RPI_VERSION=3 ;;
@@ -18,6 +18,7 @@ while getopts "13vc:Sj:l:d:o:K:-s:DT:bx" OPT; do
         T) TOOLCHAIN_SHA256=$OPTARG ;;
         b) ACTION=build ;;
         x) ACTION=run_with_env ;;
+        u) USERSPACE_HOOK=$OPTARG ;;
         -) break ;;
         ?) exit 2 ;;
     esac

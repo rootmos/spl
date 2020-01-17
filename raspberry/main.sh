@@ -52,6 +52,11 @@ fi
 info "install runtime"
 toolchain_install_runtime "$ROOT"
 
+if [ -n "${USERSPACE_HOOK-}" ]; then
+    info "running userspace hook"
+    $SHELL -c "$USERSPACE_HOOK" "$ROOT" | output
+fi
+
 info "create root initramfs"
 initramfs_list "$ROOT" | tee "$WS/root.list" | output
 initramfs_mk "$WS/root.cpio.gz" < "$WS/root.list"
@@ -67,7 +72,7 @@ fetch "$BOOT/fixup.dat" "$FIXUP_URL" "$FIXUP_SHA256"
 
 info "configure boot procedure"
 cat <<EOF > "$BOOT/cmdline.txt"
-console=serial0,115200 root=/dev/ram0 init=/sbin/init
+console=serial0,115200 console=tty1 root=/dev/ram0 init=/sbin/init ip=dhcp
 EOF
 cat <<EOF > "$BOOT/config.txt"
 start_file=start.elf

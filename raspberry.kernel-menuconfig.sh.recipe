@@ -1,6 +1,6 @@
 lib/log.sh
 raspberry/opts.sh
--l "false && export ACTION OUT BLKDEV SITE"
+-l "false && export ACTION OUT BLKDEV SITE USERSPACE_HOOK"
 lib/setup.sh
 lib/cache.sh
 lib/fetch.sh
