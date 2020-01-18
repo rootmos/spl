@@ -72,7 +72,7 @@ fetch "$BOOT/fixup.dat" "$FIXUP_URL" "$FIXUP_SHA256"
 
 info "configure boot procedure"
 cat <<EOF > "$BOOT/cmdline.txt"
-console=serial0,115200 console=tty1 root=/dev/ram0 init=/sbin/init ip=dhcp
+console=serial0,115200 console=tty1 root=/dev/ram0 init=/sbin/init ip=dhcp carrier_timeout=5
 EOF
 cat <<EOF > "$BOOT/config.txt"
 start_file=start.elf
