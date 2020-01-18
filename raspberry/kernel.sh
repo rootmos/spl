@@ -23,6 +23,31 @@ kernel_install() {
         mkdir -p "$WS/linux"
         tar xf "$WS/kernel.tar.gz" -C "$WS/linux" --strip-components=1 | output
 
+        patch -p1 -d "$WS/linux" <<EOF
+diff -ru a/net/ipv4/ipconfig.c b/net/ipv4/ipconfig.c
+--- a/net/ipv4/ipconfig.c	2019-09-24 19:28:42.000000000 +0200
++++ b/net/ipv4/ipconfig.c	2020-01-18 17:38:06.141419443 +0100
+@@ -85,7 +85,7 @@
+ 
+ /* Define the friendly delay before and after opening net devices */
+ #define CONF_POST_OPEN		10	/* After opening: 10 msecs */
+-#define CONF_CARRIER_TIMEOUT	120000	/* Wait for carrier timeout */
++#define CONF_CARRIER_TIMEOUT	1000	/* Wait for carrier timeout */
+ 
+ /* Define the timeout for waiting for a DHCP/BOOTP/RARP reply */
+ #define CONF_OPEN_RETRIES 	2	/* (Re)open devices twice */
+@@ -93,7 +93,7 @@
+ #define CONF_BASE_TIMEOUT	(HZ*2)	/* Initial timeout: 2 seconds */
+ #define CONF_TIMEOUT_RANDOM	(HZ)	/* Maximum amount of randomization */
+ #define CONF_TIMEOUT_MULT	*7/4	/* Rate of timeout growth */
+-#define CONF_TIMEOUT_MAX	(HZ*30)	/* Maximum allowed timeout */
++#define CONF_TIMEOUT_MAX	(HZ)	/* Maximum allowed timeout */
+ #define CONF_NAMESERVERS_MAX   3       /* Maximum number of nameservers
+ 					   - '3' from resolv.h */
+ #define CONF_NTP_SERVERS_MAX   3	/* Maximum number of NTP servers */
+Only in b/net/ipv4: .ipconfig.c.swp
+EOF
+
         info "configure kernel"
         "kernel${RPI_VERSION}_config" > "$WS/linux/.config"
 
