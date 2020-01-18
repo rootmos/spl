@@ -4,7 +4,7 @@ export LOG_FILE ?= .log
 all: check raspberry.sh debian.sh
 
 test-raspberry: raspberry.sh
-	./$< -3 -s example -q
+	./$< -1 -s example -o raspberry.img
 
 test-debian: debian.sh
 	./$< -o debian.img
@@ -21,11 +21,14 @@ $(eval $(call recipe, raspberry.busybox-menuconfig.sh))
 $(eval $(call recipe, debian.sh))
 $(eval $(call recipe, debian.kernel-menuconfig.sh))
 
-configure-raspberry-kernel: raspberry.kernel-menuconfig.sh
-	./$< $(shell pwd)/raspberry/kernel.config
+configure-raspberry-kernel1: raspberry.kernel-menuconfig.sh
+	./$< -1 $(shell pwd)/raspberry/kernel1.config
+
+configure-raspberry-kernel3: raspberry.kernel-menuconfig.sh
+	./$< -3 $(shell pwd)/raspberry/kernel3.config
 
 configure-raspberry-busybox: raspberry.busybox-menuconfig.sh
-	./$< $(shell pwd)/lib/busybox.config
+	./$< -1 $(shell pwd)/lib/busybox.config
 
 configure-debian-kernel: debian.kernel-menuconfig.sh
 	./$< $(shell pwd)/debian/kernel.config

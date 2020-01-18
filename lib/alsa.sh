@@ -5,18 +5,35 @@ alsa_lib_install() {
     fetch -b "$WS/alsa-lib.tar.bz2" \
         "$ALSA_MIRROR/lib/alsa-lib-$ALSA_VERSION.tar.bz2" \
         "9f0dff1b1e8fcb68034c8cb043bcdc398138c4b5d951e86990cfe890fbadc7cf"
-    mkdir -p "$WS/alsa-lib/build"
+    mkdir -p "$WS/alsa-lib/build_shared" "$WS/alsa-lib/build_static"
     tar xf "$WS/alsa-lib.tar.bz2" -C "$WS/alsa-lib" --strip-components=1 | output
-    info "configuring alsa-lib"
-    (cd "$WS/alsa-lib/build" && ../configure \
+
+    alsa_lib_patch | patch -p1 -d "$WS/alsa-lib" | output
+
+    info "configuring alsa-lib (shared)"
+    (cd "$WS/alsa-lib/build_shared" && ../configure \
         --host="$TARGET" \
         --disable-python --disable-alisp \
         --disable-old-symbols \
+        --enable-shared --disable-static \
         ) | output
-    info "building alsa-lib"
-    make -C "$WS/alsa-lib/build" -j"$J" 2>&1 V=1 | output
-    make -C "$WS/alsa-lib/build" -j"$J" DESTDIR="$TOOLCHAIN_ROOT" install-strip 2>&1 | output
-    make -C "$WS/alsa-lib/build" -j"$J" DESTDIR="$1" install-strip 2>&1 | output
+
+    info "building alsa-lib (shared)"
+    make -C "$WS/alsa-lib/build_shared" -j"$J" 2>&1 V=1 | output
+    make -C "$WS/alsa-lib/build_shared" -j"$J" DESTDIR="$TOOLCHAIN_ROOT" install-strip 2>&1 | output
+    make -C "$WS/alsa-lib/build_shared" -j"$J" DESTDIR="$1" install-strip 2>&1 | output
+
+    info "configuring alsa-lib (static)"
+    (cd "$WS/alsa-lib/build_static" && ../configure \
+        --host="$TARGET" \
+        --disable-python --disable-alisp \
+        --disable-old-symbols \
+        --enable-static --disable-shared \
+        ) | output
+
+    info "building alsa-lib (static)"
+    make -C "$WS/alsa-lib/build_static" -j"$J" 2>&1 V=1 | output
+    make -C "$WS/alsa-lib/build_static" -j"$J" DESTDIR="$TOOLCHAIN_ROOT" install-strip 2>&1 | output
 }
 
 alsa_utils_install() {

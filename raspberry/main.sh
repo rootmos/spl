@@ -1,4 +1,4 @@
-if [ ! -b "${BLKDEV-}" ] && [ -z "${OUT-}" ]; then
+if [ "$ACTION" = "build" ] && [ ! -b "${BLKDEV-}" ] && [ -z "${OUT-}" ]; then
     error "neither a block device nor an output file was specified"
 fi
 
@@ -7,15 +7,17 @@ SIZE_MB=${SIZE_MB-50}
 ROOT=$WS/root
 BOOT=$WS/boot
 mkdir -p "$ROOT" "$BOOT"
-TOOLCHAIN_ROOT=$WS/toolchain
+export TOOLCHAIN_ROOT=$WS/toolchain
 toolchain "$TOOLCHAIN_ROOT"
 source "$TOOLCHAIN_ROOT"/.env
 
-# kernel
-kernel_install "$BOOT"
+if [ "$ACTION" = "build" ]; then
+    # kernel
+    kernel_install "$BOOT"
 
-# userland
-busybox_install "$ROOT"
+    # userland
+    busybox_install "$ROOT"
+fi
 
 should_install_pkg() {
     [ -f "${SITE-/dev/null}/.pkg" ] && grep -cq "^$1" "$SITE/.pkg"
@@ -33,6 +35,15 @@ if should_install_pkg alsa-utils; then
     alsa_utils_install "$ROOT"
 fi
 
+if should_install_pkg libusb; then
+    libusb_install "$ROOT"
+fi
+
+if [ "$ACTION" = "run_with_env" ]; then
+    $SHELL -c "$@"
+    exit $?
+fi
+
 if [ -n "${SITE-}" ]; then
     info "installing site files"
     tar -cf- -C "$SITE" . | tar -xf- -C "$ROOT"
@@ -40,6 +51,11 @@ fi
 
 info "install runtime"
 toolchain_install_runtime "$ROOT"
+
+if [ -n "${USERSPACE_HOOK-}" ]; then
+    info "running userspace hook"
+    $SHELL -c "$USERSPACE_HOOK" "$ROOT" | output
+fi
 
 info "create root initramfs"
 initramfs_list "$ROOT" | tee "$WS/root.list" | output
@@ -56,7 +72,7 @@ fetch "$BOOT/fixup.dat" "$FIXUP_URL" "$FIXUP_SHA256"
 
 info "configure boot procedure"
 cat <<EOF > "$BOOT/cmdline.txt"
-console=serial0,115200 root=/dev/ram0 init=/sbin/init
+console=serial0,115200 console=tty1 root=/dev/ram0 init=/sbin/init ip=dhcp
 EOF
 cat <<EOF > "$BOOT/config.txt"
 start_file=start.elf
@@ -87,7 +103,7 @@ $SUDO mount -o loop "$WS/boot.img" "$MNT"
 info "populate boot filesystem "
 $SUDO cp "$WS/root.cpio.gz" "$BOOT"
 info "boot filesystem size: $(du -sh "$BOOT" | cut -f1)"
-$SUDO rsync -rv "$BOOT"/ "$MNT" | output
+tar -cf- --owner=0 --group=0 -C "$BOOT" . | sudo tar -xvf- -C "$MNT" | output
 
 info "unmount filesystem"
 sync "$MNT"

@@ -6,10 +6,13 @@ lib/fetch.sh
 lib/initramfs.sh
 raspberry/versions.sh
 raspberry/toolchain.sh
--f kernel_config raspberry/kernel.config
+-f kernel1_config raspberry/kernel1.config
+-f kernel3_config raspberry/kernel3.config
 raspberry/kernel.sh
 -f busybox_config lib/busybox.config
 lib/busybox.sh
 lib/ncurses.sh
+-f alsa_lib_patch lib/alsa-lib.patch
 lib/alsa.sh
+lib/libusb.sh
 raspberry/main.sh

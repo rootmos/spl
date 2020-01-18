@@ -1,10 +1,12 @@
 lib/log.sh
 raspberry/opts.sh
+-l "false && export ACTION OUT BLKDEV SITE USERSPACE_HOOK KERNEL_SHA256"
 lib/setup.sh
 lib/cache.sh
 lib/fetch.sh
 raspberry/versions.sh
+-l "false && export FIXUP_SHA256 FIXUP_URL START_ELF_SHA256 START_ELF_URL BOOTCODE_SHA256 BOOTCODE_URL"
 raspberry/toolchain.sh
 -f busybox_config lib/busybox.config
 lib/busybox.sh
--l "busybox_menuconfig \$1"
+-l "busybox_menuconfig \"\$1\""
