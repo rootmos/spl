@@ -48,6 +48,20 @@ diff -ru a/net/ipv4/ipconfig.c b/net/ipv4/ipconfig.c
 Only in b/net/ipv4: .ipconfig.c.swp
 EOF
 
+        patch -p1 -d "$WS/linux" <<EOF
+diff -ru a/scripts/dtc/dtc-lexer.l b/scripts/dtc/dtc-lexer.l
+--- a/scripts/dtc/dtc-lexer.l	2020-09-18 16:47:48.390462120 +0200
++++ b/scripts/dtc/dtc-lexer.l	2020-09-18 16:48:25.726702951 +0200
+@@ -38,7 +38,6 @@
+ #include "srcpos.h"
+ #include "dtc-parser.tab.h"
+ 
+-YYLTYPE yylloc;
+ extern bool treesource_error;
+ 
+ /* CAUTION: this will stop working if we ever use yyless() or yyunput() */
+EOF
+
         info "configure kernel"
         "kernel${RPI_VERSION}_config" > "$WS/linux/.config"
 
